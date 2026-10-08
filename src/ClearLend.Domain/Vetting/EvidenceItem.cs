@@ -39,24 +39,33 @@ public sealed class EvidenceItem
     public string? RejectionReason { get; private set; }
 
     public static DomainResult<EvidenceItem> Request(
-        VettingCaseId vettingCaseId,
-        EvidenceType type,
-        DateTimeOffset requestedAt,
+        EvidenceRequest? request,
         EvidenceItemId? id = null)
     {
-        if (requestedAt.Offset != TimeSpan.Zero)
+        if (request is null)
+        {
+            return DomainResults.Failure<EvidenceItem>(
+                new("evidence.request.required", "Evidence-request details are required."));
+        }
+
+        if (request.RequestedAt.Offset != TimeSpan.Zero)
         {
             return DomainResults.Failure<EvidenceItem>(
                 new("evidence.requested_at.not_utc", "Request time must be expressed in UTC."));
         }
 
         return DomainResults.Success<EvidenceItem>(
-            new(id ?? EvidenceItemId.New(), vettingCaseId, type, requestedAt));
+            new(id ?? EvidenceItemId.New(), request.VettingCaseId, request.Type, request.RequestedAt));
     }
 
-    public DomainResult Submit(StorageReference? storageReference, DateTimeOffset submittedAt)
+    public DomainResult Submit(EvidenceSubmission? submission)
     {
-        var validTime = EnsureUtc(submittedAt);
+        if (submission is null)
+        {
+            return DomainResult.Failure(new("evidence.submission.required", "Evidence-submission details are required."));
+        }
+
+        var validTime = EnsureUtc(submission.SubmittedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status != EvidenceStatus.Requested)
@@ -65,18 +74,12 @@ public sealed class EvidenceItem
                 new("evidence.submit.invalid_status", "Only requested evidence can be submitted. Create a new item for replacement evidence."));
         }
 
-        if (storageReference is null)
-        {
-            return DomainResult.Failure(
-                new("evidence.storage_reference.required", "A storage reference is required."));
-        }
-
-        StorageReference = storageReference;
-        SubmittedAt = submittedAt;
+        StorageReference = submission.StorageReference;
+        SubmittedAt = submission.SubmittedAt;
         ReviewedAt = null;
         RejectionReason = null;
         Status = EvidenceStatus.Submitted;
-        StatusChangedAt = submittedAt;
+        StatusChangedAt = submission.SubmittedAt;
         return DomainResult.Success();
     }
 
@@ -85,22 +88,27 @@ public sealed class EvidenceItem
         return Review(EvidenceStatus.Accepted, null, reviewedAt);
     }
 
-    public DomainResult Reject(string? reason, DateTimeOffset reviewedAt)
+    public DomainResult Reject(EvidenceRejection? rejection)
     {
-        if (string.IsNullOrWhiteSpace(reason))
+        if (rejection is null)
+        {
+            return DomainResult.Failure(new("evidence.rejection.required", "Evidence-rejection details are required."));
+        }
+
+        if (string.IsNullOrWhiteSpace(rejection.Reason))
         {
             return DomainResult.Failure(
                 new("evidence.rejection_reason.required", "A rejection reason is required."));
         }
 
-        var normalisedReason = reason.Trim();
+        var normalisedReason = rejection.Reason.Trim();
         if (normalisedReason.Length > 1000)
         {
             return DomainResult.Failure(
                 new("evidence.rejection_reason.too_long", "A rejection reason cannot exceed 1000 characters."));
         }
 
-        return Review(EvidenceStatus.Rejected, normalisedReason, reviewedAt);
+        return Review(EvidenceStatus.Rejected, normalisedReason, rejection.ReviewedAt);
     }
 
     public DomainResult Expire(DateTimeOffset changedAt)

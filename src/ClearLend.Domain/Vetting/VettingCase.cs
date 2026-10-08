@@ -36,24 +36,34 @@ public sealed class VettingCase
     public DateTimeOffset? ClosedAt { get; private set; }
 
     public static DomainResult<VettingCase> Open(
-        UserAccountId subjectAccountId,
-        VettingSubjectType subjectType,
-        DateTimeOffset openedAt,
+        VettingCaseOpening? opening,
         VettingCaseId? id = null)
     {
-        if (openedAt.Offset != TimeSpan.Zero)
+        if (opening is null)
+        {
+            return DomainResults.Failure<VettingCase>(
+                new("vetting.opening.required", "Vetting-case opening details are required."));
+        }
+
+        if (opening.OpenedAt.Offset != TimeSpan.Zero)
         {
             return DomainResults.Failure<VettingCase>(
                 new("vetting.opened_at.not_utc", "Opening time must be expressed in UTC."));
         }
 
         return DomainResults.Success<VettingCase>(
-            new(id ?? VettingCaseId.New(), subjectAccountId, subjectType, openedAt));
+            new(id ?? VettingCaseId.New(), opening.SubjectAccountId, opening.SubjectType, opening.OpenedAt));
     }
 
-    public DomainResult AssignReviewer(UserAccountId reviewerAccountId, DateTimeOffset changedAt)
+    public DomainResult AssignReviewer(ReviewerAssignment? assignment)
     {
-        var validTime = EnsureUtc(changedAt);
+        if (assignment is null)
+        {
+            return DomainResult.Failure(
+                new("vetting.reviewer_assignment.required", "Reviewer-assignment details are required."));
+        }
+
+        var validTime = EnsureUtc(assignment.AssignedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status is VettingCaseStatus.Approved or VettingCaseStatus.Rejected or VettingCaseStatus.Closed)
@@ -62,8 +72,8 @@ public sealed class VettingCase
                 new("vetting.reviewer_assignment.invalid_status", "A completed or closed case cannot be assigned."));
         }
 
-        ReviewerAccountId = reviewerAccountId;
-        LastChangedAt = changedAt;
+        ReviewerAccountId = assignment.ReviewerAccountId;
+        LastChangedAt = assignment.AssignedAt;
         return DomainResult.Success();
     }
 
@@ -115,6 +125,22 @@ public sealed class VettingCase
         return DomainResult.Success();
     }
 
+    public DomainResult ResumeFromSuspension(DateTimeOffset changedAt)
+    {
+        var validTime = EnsureUtc(changedAt);
+        if (!validTime.IsSuccess) return validTime;
+
+        if (Status != VettingCaseStatus.Suspended)
+        {
+            return DomainResult.Failure(
+                new("vetting.suspension.resume.invalid_status", "Only a suspended case can resume review."));
+        }
+
+        Status = VettingCaseStatus.InReview;
+        LastChangedAt = changedAt;
+        return DomainResult.Success();
+    }
+
     public DomainResult ApplyDecision(VettingDecision decision, DateTimeOffset changedAt)
     {
         var validTime = EnsureUtc(changedAt);
@@ -132,14 +158,29 @@ public sealed class VettingCase
                 new("vetting.decision.invalid_status", "Only a case in review can receive a decision."));
         }
 
-        Status = decision.Outcome switch
+        var nextStatus = decision.Outcome switch
         {
-            DecisionOutcome.Approved => VettingCaseStatus.Approved,
-            DecisionOutcome.Rejected => VettingCaseStatus.Rejected,
-            DecisionOutcome.MoreInformationRequired => VettingCaseStatus.AwaitingInformation,
-            DecisionOutcome.Restricted => VettingCaseStatus.Suspended,
-            _ => VettingCaseStatus.Suspended
+            DecisionOutcome.Approved => DomainResults.Success(VettingCaseStatus.Approved),
+            DecisionOutcome.Rejected => DomainResults.Success(VettingCaseStatus.Rejected),
+            DecisionOutcome.MoreInformationRequired => DomainResults.Success(VettingCaseStatus.AwaitingInformation),
+            DecisionOutcome.Restricted => DomainResults.Success(VettingCaseStatus.Suspended),
+            _ => DomainResults.Failure<VettingCaseStatus>(
+                new("vetting.decision.outcome.invalid", "The decision outcome is not supported."))
         };
+
+        if (!nextStatus.IsSuccess)
+        {
+            return nextStatus.TryGetError(out var error)
+                ? DomainResult.Failure(error)
+                : DomainResult.Failure(new("vetting.decision.outcome.invalid", "The decision outcome is not supported."));
+        }
+
+        if (!nextStatus.TryGetValue(out var status))
+        {
+            return DomainResult.Failure(new("vetting.decision.outcome.invalid", "The decision outcome is not supported."));
+        }
+
+        Status = status;
         LastChangedAt = changedAt;
         return DomainResult.Success();
     }

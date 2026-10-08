@@ -1,3 +1,4 @@
+using ClearLend.Domain.Common;
 using ClearLend.Domain.Identity;
 using ClearLend.Domain.Vetting;
 
@@ -20,15 +21,10 @@ public sealed class VettingDecisionTests
     [Fact]
     public void DecisionRequiresReason()
     {
-        var result = VettingDecision.Record(
-            VettingCaseId.New(),
-            UserAccountId.New(),
-            VettingSubjectType.Borrower,
-            DecisionOutcome.Rejected,
-            null,
-            UserAccountId.New(),
-            PolicyVersion.Create("2026.1").Value!,
-            DecidedAt);
+        var result = VettingDecision.Record(new VettingDecisionDetails(
+            VettingCaseId.New(), UserAccountId.New(), VettingSubjectType.Borrower,
+            DecisionOutcome.Rejected, null!, UserAccountId.New(),
+            TestResult.Get(PolicyVersion.Create("2026.1")), TestResult.Get(UtcTimestamp.Create(DecidedAt))));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("vetting.decision_reason.required", result.Error?.Code);
@@ -37,15 +33,10 @@ public sealed class VettingDecisionTests
     [Fact]
     public void DecisionRequiresPolicyVersion()
     {
-        var result = VettingDecision.Record(
-            VettingCaseId.New(),
-            UserAccountId.New(),
-            VettingSubjectType.Borrower,
-            DecisionOutcome.Approved,
-            DecisionReason.Create("Review passed.").Value!,
-            UserAccountId.New(),
-            null,
-            DecidedAt);
+        var result = VettingDecision.Record(new VettingDecisionDetails(
+            VettingCaseId.New(), UserAccountId.New(), VettingSubjectType.Borrower,
+            DecisionOutcome.Approved, TestResult.Get(DecisionReason.Create("Review passed.")),
+            UserAccountId.New(), null!, TestResult.Get(UtcTimestamp.Create(DecidedAt))));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("vetting.policy_version.required", result.Error?.Code);
@@ -55,27 +46,14 @@ public sealed class VettingDecisionTests
     public void DecisionRequiresUtcTime()
     {
         var nonUtc = new DateTimeOffset(2026, 10, 8, 12, 0, 0, TimeSpan.FromHours(1));
-        var result = VettingDecision.Record(
-            VettingCaseId.New(),
-            UserAccountId.New(),
-            VettingSubjectType.Borrower,
-            DecisionOutcome.MoreInformationRequired,
-            DecisionReason.Create("More evidence is required.").Value!,
-            UserAccountId.New(),
-            PolicyVersion.Create("2026.1").Value!,
-            nonUtc);
+        var result = UtcTimestamp.Create(nonUtc);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("vetting.decision_time.not_utc", result.Error?.Code);
+        Assert.Equal("timestamp.not_utc", result.Error?.Code);
     }
 
-    private static VettingDecision CreateDecision() => VettingDecision.Record(
-        VettingCaseId.New(),
-        UserAccountId.New(),
-        VettingSubjectType.Borrower,
-        DecisionOutcome.Approved,
-        DecisionReason.Create("Initial borrower review passed.").Value!,
-        UserAccountId.New(),
-        PolicyVersion.Create("2026.1").Value!,
-        DecidedAt).Value!;
+    private static VettingDecision CreateDecision() => TestResult.Get(VettingDecision.Record(new VettingDecisionDetails(
+        VettingCaseId.New(), UserAccountId.New(), VettingSubjectType.Borrower,
+        DecisionOutcome.Approved, TestResult.Get(DecisionReason.Create("Initial borrower review passed.")),
+        UserAccountId.New(), TestResult.Get(PolicyVersion.Create("2026.1")), TestResult.Get(UtcTimestamp.Create(DecidedAt)))));
 }

@@ -61,18 +61,20 @@ public sealed class UserAccountTests
     {
         var nonUtc = new DateTimeOffset(2026, 10, 8, 12, 0, 0, TimeSpan.FromHours(1));
 
-        var result = UserAccount.Register(CreateSubject("subject"), CreateEmail("person@example.com"), nonUtc);
+        var result = UserAccount.Register(new UserAccountRegistration(
+            CreateSubject("subject"), CreateEmail("person@example.com"), nonUtc));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("identity.registration_time.not_utc", result.Error?.Code);
     }
 
     private static UserAccount CreateAccount(string email = "person@example.com") =>
-        UserAccount.Register(CreateSubject("auth0|user-123"), CreateEmail(email), RegisteredAt).Value!;
+        TestResult.Get(UserAccount.Register(new UserAccountRegistration(
+            CreateSubject("auth0|user-123"), CreateEmail(email), RegisteredAt)));
 
     private static IdentityProviderSubject CreateSubject(string value) =>
-        IdentityProviderSubject.Create(value).Value!;
+        TestResult.Get(IdentityProviderSubject.Create(value));
 
     private static EmailAddress CreateEmail(string value) =>
-        EmailAddress.Create(value).Value!;
+        TestResult.Get(EmailAddress.Create(value));
 }

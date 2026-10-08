@@ -3,7 +3,7 @@ using ClearLend.Domain.Common;
 
 namespace ClearLend.Domain.Identity;
 
-public sealed record EmailAddress
+public sealed partial record EmailAddress
 {
     private EmailAddress(string value) => Value = value;
 
@@ -24,7 +24,7 @@ public sealed record EmailAddress
                 new("identity.email.too_long", "An email address cannot exceed 320 characters."));
         }
 
-        if (!Regex.IsMatch(normalised, @"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.CultureInvariant))
+        if (!EmailPattern().IsMatch(normalised))
         {
             return DomainResults.Failure<EmailAddress>(
                 new("identity.email.invalid", "The email address is not valid."));
@@ -32,6 +32,9 @@ public sealed record EmailAddress
 
         return DomainResults.Success<EmailAddress>(new(normalised));
     }
+
+    [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex EmailPattern();
 
     public override string ToString() => Value;
 }

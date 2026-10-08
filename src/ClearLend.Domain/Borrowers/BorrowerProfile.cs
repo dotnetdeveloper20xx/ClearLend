@@ -31,18 +31,23 @@ public sealed class BorrowerProfile
     public DateTimeOffset StateChangedAt { get; private set; }
 
     public static DomainResult<BorrowerProfile> Create(
-        UserAccountId userAccountId,
-        DateTimeOffset createdAt,
+        BorrowerProfileCreation? creation,
         BorrowerProfileId? id = null)
     {
-        if (createdAt.Offset != TimeSpan.Zero)
+        if (creation is null)
+        {
+            return DomainResults.Failure<BorrowerProfile>(
+                new("borrower.profile_creation.required", "Borrower-profile creation details are required."));
+        }
+
+        if (creation.CreatedAt.Offset != TimeSpan.Zero)
         {
             return DomainResults.Failure<BorrowerProfile>(
                 new("borrower.created_at.not_utc", "Creation time must be expressed in UTC."));
         }
 
         return DomainResults.Success<BorrowerProfile>(
-            new(id ?? BorrowerProfileId.New(), userAccountId, createdAt));
+            new(id ?? BorrowerProfileId.New(), creation.UserAccountId, creation.CreatedAt));
     }
 
     public DomainResult Complete(PersonalName? name)

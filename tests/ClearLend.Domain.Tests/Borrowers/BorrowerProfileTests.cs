@@ -1,4 +1,5 @@
 using ClearLend.Domain.Borrowers;
+using ClearLend.Domain.Common;
 using ClearLend.Domain.Identity;
 using ClearLend.Domain.Vetting;
 
@@ -21,7 +22,7 @@ public sealed class BorrowerProfileTests
     public void CompleteAndSubmitForReviewMovesProfileToReadyForReview()
     {
         var profile = CreateProfile();
-        var name = PersonalName.Create("Aisha", "Khan").Value!;
+        var name = TestResult.Get(PersonalName.Create("Aisha", "Khan"));
 
         Assert.True(profile.Complete(name).IsSuccess);
         Assert.True(profile.SubmitForReview(CreatedAt.AddMinutes(1)).IsSuccess);
@@ -52,7 +53,7 @@ public sealed class BorrowerProfileTests
     {
         var profile = CreateProfile();
         var decision = CreateDecision(profile.UserAccountId, DecisionOutcome.Approved);
-        Assert.True(profile.Complete(PersonalName.Create("Aisha", "Khan").Value!).IsSuccess);
+        Assert.True(profile.Complete(TestResult.Get(PersonalName.Create("Aisha", "Khan"))).IsSuccess);
         Assert.True(profile.SubmitForReview(CreatedAt.AddMinutes(1)).IsSuccess);
         Assert.True(profile.Activate(decision, CreatedAt.AddMinutes(2)).IsSuccess);
         Assert.True(profile.Suspend(CreatedAt.AddMinutes(3)).IsSuccess);
@@ -71,15 +72,16 @@ public sealed class BorrowerProfileTests
     }
 
     private static BorrowerProfile CreateProfile() =>
-        BorrowerProfile.Create(UserAccountId.New(), CreatedAt).Value!;
+        TestResult.Get(BorrowerProfile.Create(new BorrowerProfileCreation(UserAccountId.New(), CreatedAt)));
 
-    private static VettingDecision CreateDecision(UserAccountId subjectAccountId, DecisionOutcome outcome) => VettingDecision.Record(
-        VettingCaseId.New(),
-        subjectAccountId,
-        VettingSubjectType.Borrower,
-        outcome,
-        DecisionReason.Create("Reviewed.").Value!,
-        UserAccountId.New(),
-        PolicyVersion.Create("2026.1").Value!,
-        CreatedAt).Value!;
+    private static VettingDecision CreateDecision(UserAccountId subjectAccountId, DecisionOutcome outcome) => TestResult.Get(VettingDecision.Record(
+        new VettingDecisionDetails(
+            VettingCaseId.New(),
+            subjectAccountId,
+            VettingSubjectType.Borrower,
+            outcome,
+            TestResult.Get(DecisionReason.Create("Reviewed.")),
+            UserAccountId.New(),
+            TestResult.Get(PolicyVersion.Create("2026.1")),
+            TestResult.Get(UtcTimestamp.Create(CreatedAt)))));
 }

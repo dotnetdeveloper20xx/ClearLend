@@ -31,25 +31,29 @@ public sealed class UserAccount
     public DateTimeOffset StatusChangedAt { get; private set; }
 
     public static DomainResult<UserAccount> Register(
-        IdentityProviderSubject? identityProviderSubject,
-        EmailAddress? emailAddress,
-        DateTimeOffset registeredAt,
+        UserAccountRegistration? registration,
         UserAccountId? id = null)
     {
-        if (registeredAt.Offset != TimeSpan.Zero)
+        if (registration is null)
+        {
+            return DomainResults.Failure<UserAccount>(
+                new("identity.registration.required", "Account-registration details are required."));
+        }
+
+        if (registration.RegisteredAt.Offset != TimeSpan.Zero)
         {
             return DomainResults.Failure<UserAccount>(
                 new("identity.registration_time.not_utc", "Registration time must be expressed in UTC."));
         }
 
-        if (identityProviderSubject is null || emailAddress is null)
+        if (registration.IdentityProviderSubject is null || registration.EmailAddress is null)
         {
             return DomainResults.Failure<UserAccount>(
                 new("identity.account.values_required", "Identity subject and email address are required."));
         }
 
         return DomainResults.Success<UserAccount>(
-            new(id ?? UserAccountId.New(), identityProviderSubject, emailAddress, registeredAt));
+            new(id ?? UserAccountId.New(), registration.IdentityProviderSubject, registration.EmailAddress, registration.RegisteredAt));
     }
 
     public DomainResult ChangeEmail(EmailAddress? emailAddress)

@@ -1,3 +1,4 @@
+using ClearLend.Domain.Common;
 using ClearLend.Domain.Identity;
 using ClearLend.Domain.Vetting;
 
@@ -23,7 +24,7 @@ public sealed class VettingCaseTests
         var vettingCase = CreateCase(VettingSubjectType.Lender);
         var reviewer = UserAccountId.New();
 
-        Assert.True(vettingCase.AssignReviewer(reviewer, OpenedAt.AddMinutes(1)).IsSuccess);
+        Assert.True(vettingCase.AssignReviewer(new ReviewerAssignment(reviewer, OpenedAt.AddMinutes(1))).IsSuccess);
         Assert.True(vettingCase.StartReview(OpenedAt.AddMinutes(2)).IsSuccess);
 
         Assert.Equal(reviewer, vettingCase.ReviewerAccountId);
@@ -62,7 +63,7 @@ public sealed class VettingCaseTests
         Assert.True(vettingCase.StartReview(OpenedAt.AddMinutes(1)).IsSuccess);
         Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase.Id, DecisionOutcome.Rejected), OpenedAt.AddMinutes(2)).IsSuccess);
 
-        var result = vettingCase.AssignReviewer(UserAccountId.New(), OpenedAt.AddMinutes(3));
+        var result = vettingCase.AssignReviewer(new ReviewerAssignment(UserAccountId.New(), OpenedAt.AddMinutes(3)));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("vetting.reviewer_assignment.invalid_status", result.Error?.Code);
@@ -80,16 +81,27 @@ public sealed class VettingCaseTests
         Assert.Equal(closedAt, vettingCase.ClosedAt);
     }
 
-    private static VettingCase CreateCase(VettingSubjectType subjectType) =>
-        VettingCase.Open(UserAccountId.New(), subjectType, OpenedAt).Value!;
+    [Fact]
+    public void SuspendedCaseCanResumeReview()
+    {
+        var vettingCase = CreateCase(VettingSubjectType.Borrower);
+        Assert.True(vettingCase.Suspend(OpenedAt.AddMinutes(1)).IsSuccess);
 
-    private static VettingDecision CreateDecision(VettingCaseId caseId, DecisionOutcome outcome) => VettingDecision.Record(
-        caseId,
-        UserAccountId.New(),
-        VettingSubjectType.Borrower,
-        outcome,
-        DecisionReason.Create("Reviewed.").Value!,
-        UserAccountId.New(),
-        PolicyVersion.Create("2026.1").Value!,
-        OpenedAt).Value!;
+        Assert.True(vettingCase.ResumeFromSuspension(OpenedAt.AddMinutes(2)).IsSuccess);
+        Assert.Equal(VettingCaseStatus.InReview, vettingCase.Status);
+    }
+
+    private static VettingCase CreateCase(VettingSubjectType subjectType) =>
+        TestResult.Get(VettingCase.Open(new VettingCaseOpening(UserAccountId.New(), subjectType, OpenedAt)));
+
+    private static VettingDecision CreateDecision(VettingCaseId caseId, DecisionOutcome outcome) => TestResult.Get(VettingDecision.Record(
+        new VettingDecisionDetails(
+            caseId,
+            UserAccountId.New(),
+            VettingSubjectType.Borrower,
+            outcome,
+            TestResult.Get(DecisionReason.Create("Reviewed.")),
+            UserAccountId.New(),
+            TestResult.Get(PolicyVersion.Create("2026.1")),
+            TestResult.Get(UtcTimestamp.Create(OpenedAt)))));
 }

@@ -7,24 +7,17 @@ public sealed class VettingDecision
 {
     private VettingDecision(
         VettingDecisionId id,
-        VettingCaseId vettingCaseId,
-        UserAccountId subjectAccountId,
-        VettingSubjectType subjectType,
-        DecisionOutcome outcome,
-        DecisionReason reason,
-        UserAccountId reviewerAccountId,
-        PolicyVersion policyVersion,
-        DateTimeOffset decidedAt)
+        VettingDecisionDetails details)
     {
         Id = id;
-        VettingCaseId = vettingCaseId;
-        SubjectAccountId = subjectAccountId;
-        SubjectType = subjectType;
-        Outcome = outcome;
-        Reason = reason;
-        ReviewerAccountId = reviewerAccountId;
-        PolicyVersion = policyVersion;
-        DecidedAt = decidedAt;
+        VettingCaseId = details.VettingCaseId;
+        SubjectAccountId = details.SubjectAccountId;
+        SubjectType = details.SubjectType;
+        Outcome = details.Outcome;
+        Reason = details.Reason;
+        ReviewerAccountId = details.ReviewerAccountId;
+        PolicyVersion = details.PolicyVersion;
+        DecidedAt = details.DecidedAt.Value;
     }
 
     public VettingDecisionId Id { get; }
@@ -46,35 +39,28 @@ public sealed class VettingDecision
     public DateTimeOffset DecidedAt { get; }
 
     public static DomainResult<VettingDecision> Record(
-        VettingCaseId vettingCaseId,
-        UserAccountId subjectAccountId,
-        VettingSubjectType subjectType,
-        DecisionOutcome outcome,
-        DecisionReason? reason,
-        UserAccountId reviewerAccountId,
-        PolicyVersion? policyVersion,
-        DateTimeOffset decidedAt,
+        VettingDecisionDetails? details,
         VettingDecisionId? id = null)
     {
-        if (decidedAt.Offset != TimeSpan.Zero)
+        if (details is null)
         {
             return DomainResults.Failure<VettingDecision>(
-                new("vetting.decision_time.not_utc", "Decision time must be expressed in UTC."));
+                new("vetting.decision.details.required", "Decision details are required."));
         }
 
-        if (reason is null)
+        if (details.Reason is null)
         {
             return DomainResults.Failure<VettingDecision>(
                 new("vetting.decision_reason.required", "A decision reason is required."));
         }
 
-        if (policyVersion is null)
+        if (details.PolicyVersion is null)
         {
             return DomainResults.Failure<VettingDecision>(
                 new("vetting.policy_version.required", "The policy version is required."));
         }
 
         return DomainResults.Success<VettingDecision>(
-            new(id ?? VettingDecisionId.New(), vettingCaseId, subjectAccountId, subjectType, outcome, reason, reviewerAccountId, policyVersion, decidedAt));
+            new(id ?? VettingDecisionId.New(), details));
     }
 }

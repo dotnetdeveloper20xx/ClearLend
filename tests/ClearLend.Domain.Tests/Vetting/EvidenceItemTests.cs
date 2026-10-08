@@ -28,9 +28,9 @@ public sealed class EvidenceItemTests
     public void RequestedEvidenceCanBeSubmittedAndAccepted()
     {
         var item = CreateItem();
-        var reference = StorageReference.Create("blob://evidence/123").Value!;
+        var reference = TestResult.Get(StorageReference.Create("blob://evidence/123"));
 
-        Assert.True(item.Submit(reference, RequestedAt.AddMinutes(1)).IsSuccess);
+        Assert.True(item.Submit(new EvidenceSubmission(reference, RequestedAt.AddMinutes(1))).IsSuccess);
         Assert.True(item.Accept(RequestedAt.AddMinutes(2)).IsSuccess);
         Assert.Equal(EvidenceStatus.Accepted, item.Status);
     }
@@ -40,7 +40,7 @@ public sealed class EvidenceItemTests
     {
         var item = CreateSubmittedItem();
 
-        var result = item.Reject(" ", RequestedAt.AddMinutes(2));
+        var result = item.Reject(new EvidenceRejection(" ", RequestedAt.AddMinutes(2)));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("evidence.rejection_reason.required", result.Error?.Code);
@@ -50,10 +50,10 @@ public sealed class EvidenceItemTests
     public void RejectedEvidenceMustBeReplacedWithANewItem()
     {
         var item = CreateSubmittedItem();
-        Assert.True(item.Reject("Image is unreadable.", RequestedAt.AddMinutes(2)).IsSuccess);
+        Assert.True(item.Reject(new EvidenceRejection("Image is unreadable.", RequestedAt.AddMinutes(2))).IsSuccess);
 
-        var replacement = StorageReference.Create("blob://evidence/456").Value!;
-        var result = item.Submit(replacement, RequestedAt.AddMinutes(3));
+        var replacement = TestResult.Get(StorageReference.Create("blob://evidence/456"));
+        var result = item.Submit(new EvidenceSubmission(replacement, RequestedAt.AddMinutes(3)));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("evidence.submit.invalid_status", result.Error?.Code);
@@ -73,19 +73,20 @@ public sealed class EvidenceItemTests
     [Fact]
     public void SubmissionRequiresStorageReference()
     {
-        var result = CreateItem().Submit(null, RequestedAt.AddMinutes(1));
+        var result = CreateItem().Submit(null);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("evidence.storage_reference.required", result.Error?.Code);
+        Assert.Equal("evidence.submission.required", result.Error?.Code);
     }
 
     private static EvidenceItem CreateItem() =>
-        EvidenceItem.Request(VettingCaseId.New(), EvidenceType.Identity, RequestedAt).Value!;
+        TestResult.Get(EvidenceItem.Request(new EvidenceRequest(VettingCaseId.New(), EvidenceType.Identity, RequestedAt)));
 
     private static EvidenceItem CreateSubmittedItem()
     {
         var item = CreateItem();
-        Assert.True(item.Submit(StorageReference.Create("blob://evidence/123").Value!, RequestedAt.AddMinutes(1)).IsSuccess);
+        Assert.True(item.Submit(new EvidenceSubmission(
+            TestResult.Get(StorageReference.Create("blob://evidence/123")), RequestedAt.AddMinutes(1))).IsSuccess);
         return item;
     }
 }
