@@ -1,4 +1,4 @@
-using System.Net.Mail;
+using System.Text.RegularExpressions;
 using ClearLend.Domain.Common;
 
 namespace ClearLend.Domain.Identity;
@@ -24,15 +24,7 @@ public sealed record EmailAddress
                 new("identity.email.too_long", "An email address cannot exceed 320 characters."));
         }
 
-        try
-        {
-            var address = new MailAddress(normalised);
-            if (!string.Equals(address.Address, normalised, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new FormatException();
-            }
-        }
-        catch (FormatException)
+        if (!Regex.IsMatch(normalised, @"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.CultureInvariant))
         {
             return DomainResults.Failure<EmailAddress>(
                 new("identity.email.invalid", "The email address is not valid."));
