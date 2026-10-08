@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ClearLend.Api/ClearLend.Api.csproj" />
+    <Project Path="src/ClearLend.Application/ClearLend.Application.csproj" />
+    <Project Path="src/ClearLend.Contracts/ClearLend.Contracts.csproj" />
+    <Project Path="src/ClearLend.Domain/ClearLend.Domain.csproj" />
+    <Project Path="src/ClearLend.Infrastructure/ClearLend.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ClearLend.Api.IntegrationTests/ClearLend.Api.IntegrationTests.csproj" />
+    <Project Path="tests/ClearLend.Application.Tests/ClearLend.Application.Tests.csproj" />
+    <Project Path="tests/ClearLend.Architecture.Tests/ClearLend.Architecture.Tests.csproj" />
+    <Project Path="tests/ClearLend.Domain.Tests/ClearLend.Domain.Tests.csproj" />
+    <Project Path="tests/ClearLend.Infrastructure.IntegrationTests/ClearLend.Infrastructure.IntegrationTests.csproj" />
+  </Folder>
+</Solution>
