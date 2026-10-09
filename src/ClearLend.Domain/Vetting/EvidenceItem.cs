@@ -53,6 +53,10 @@ public sealed class EvidenceItem
             return DomainResults.Failure<EvidenceItem>(
                 new("evidence.requested_at.not_utc", "Request time must be expressed in UTC."));
         }
+        if (request.VettingCaseId.Value == Guid.Empty || !Enum.IsDefined(request.Type))
+            return DomainResults.Failure<EvidenceItem>(new("evidence.request.invalid", "A valid case and supported evidence type are required."));
+        if (id is { } suppliedId && suppliedId.Value == Guid.Empty)
+            return DomainResults.Failure<EvidenceItem>(new("evidence.item_id.empty", "An evidence-item identifier cannot be empty."));
 
         return DomainResults.Success<EvidenceItem>(
             new(id ?? EvidenceItemId.New(), request.VettingCaseId, request.Type, request.RequestedAt));
@@ -67,6 +71,8 @@ public sealed class EvidenceItem
 
         var validTime = EnsureUtc(submission.SubmittedAt);
         if (!validTime.IsSuccess) return validTime;
+        if (submission.StorageReference is null || submission.SubmittedAt < RequestedAt)
+            return DomainResult.Failure(new("evidence.submission.invalid", "A storage reference and submission time no earlier than the request are required."));
 
         if (Status != EvidenceStatus.Requested)
         {
@@ -115,6 +121,7 @@ public sealed class EvidenceItem
     {
         var validTime = EnsureUtc(changedAt);
         if (!validTime.IsSuccess) return validTime;
+        if (changedAt < StatusChangedAt) return DomainResult.Failure(new("evidence.timestamp.out_of_order", "Evidence history cannot move backwards."));
 
         if (Status is not (EvidenceStatus.Submitted or EvidenceStatus.Accepted))
         {
@@ -131,6 +138,7 @@ public sealed class EvidenceItem
     {
         var validTime = EnsureUtc(changedAt);
         if (!validTime.IsSuccess) return validTime;
+        if (changedAt < StatusChangedAt) return DomainResult.Failure(new("evidence.timestamp.out_of_order", "Evidence history cannot move backwards."));
 
         if (Status is not (EvidenceStatus.Accepted or EvidenceStatus.Expired))
         {
@@ -147,6 +155,7 @@ public sealed class EvidenceItem
     {
         var validTime = EnsureUtc(reviewedAt);
         if (!validTime.IsSuccess) return validTime;
+        if (reviewedAt < StatusChangedAt) return DomainResult.Failure(new("evidence.timestamp.out_of_order", "Evidence history cannot move backwards."));
 
         if (Status != EvidenceStatus.Submitted)
         {

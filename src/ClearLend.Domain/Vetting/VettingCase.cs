@@ -5,6 +5,7 @@ namespace ClearLend.Domain.Vetting;
 
 public sealed class VettingCase
 {
+    private readonly List<VettingDecision> decisionHistory = [];
     private VettingCase(
         VettingCaseId id,
         UserAccountId subjectAccountId,
@@ -34,6 +35,7 @@ public sealed class VettingCase
     public DateTimeOffset LastChangedAt { get; private set; }
 
     public DateTimeOffset? ClosedAt { get; private set; }
+    public IReadOnlyList<VettingDecision> DecisionHistory => decisionHistory.AsReadOnly();
 
     public static DomainResult<VettingCase> Open(
         VettingCaseOpening? opening,
@@ -51,6 +53,11 @@ public sealed class VettingCase
                 new("vetting.opened_at.not_utc", "Opening time must be expressed in UTC."));
         }
 
+        if (opening.SubjectAccountId.Value == Guid.Empty || !Enum.IsDefined(opening.SubjectType))
+            return DomainResults.Failure<VettingCase>(new("vetting.opening.invalid", "A valid subject and supported subject type are required."));
+        if (id is { } suppliedId && suppliedId.Value == Guid.Empty)
+            return DomainResults.Failure<VettingCase>(new("vetting.case_id.empty", "A vetting-case identifier cannot be empty."));
+
         return DomainResults.Success<VettingCase>(
             new(id ?? VettingCaseId.New(), opening.SubjectAccountId, opening.SubjectType, opening.OpenedAt));
     }
@@ -63,8 +70,11 @@ public sealed class VettingCase
                 new("vetting.reviewer_assignment.required", "Reviewer-assignment details are required."));
         }
 
-        var validTime = EnsureUtc(assignment.AssignedAt);
+        var validTime = EnsureUtcAfterLastChange(assignment.AssignedAt);
         if (!validTime.IsSuccess) return validTime;
+
+        if (assignment.ReviewerAccountId.Value == Guid.Empty || assignment.ReviewerAccountId == SubjectAccountId)
+            return DomainResult.Failure(new("vetting.reviewer_assignment.invalid", "The reviewer must be a valid account distinct from the subject."));
 
         if (Status is VettingCaseStatus.Approved or VettingCaseStatus.Rejected or VettingCaseStatus.Closed)
         {
@@ -79,7 +89,7 @@ public sealed class VettingCase
 
     public DomainResult StartReview(DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status != VettingCaseStatus.Open)
@@ -88,6 +98,9 @@ public sealed class VettingCase
                 new("vetting.review.start.invalid_status", "Only an open case can enter review."));
         }
 
+        if (ReviewerAccountId is null)
+            return DomainResult.Failure(new("vetting.review.reviewer.required", "A reviewer must be assigned before review can start."));
+
         Status = VettingCaseStatus.InReview;
         LastChangedAt = changedAt;
         return DomainResult.Success();
@@ -95,7 +108,7 @@ public sealed class VettingCase
 
     public DomainResult RequestInformation(DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status != VettingCaseStatus.InReview)
@@ -111,7 +124,7 @@ public sealed class VettingCase
 
     public DomainResult ResumeReview(DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status != VettingCaseStatus.AwaitingInformation)
@@ -127,7 +140,7 @@ public sealed class VettingCase
 
     public DomainResult ResumeFromSuspension(DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status != VettingCaseStatus.Suspended)
@@ -141,10 +154,11 @@ public sealed class VettingCase
         return DomainResult.Success();
     }
 
-    public DomainResult ApplyDecision(VettingDecision decision, DateTimeOffset changedAt)
+    public DomainResult ApplyDecision(VettingDecision? decision, DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
+        if (decision is null) return DomainResult.Failure(new("vetting.decision.required", "A vetting decision is required."));
 
         if (decision.VettingCaseId != Id)
         {
@@ -152,6 +166,12 @@ public sealed class VettingCase
                 new("vetting.decision.case_mismatch", "The decision does not belong to this vetting case."));
         }
 
+        if (decision.SubjectAccountId != SubjectAccountId || decision.SubjectType != SubjectType)
+            return DomainResult.Failure(new("vetting.decision.subject_mismatch", "The decision subject does not match this case."));
+        if (ReviewerAccountId is null || decision.ReviewerAccountId != ReviewerAccountId)
+            return DomainResult.Failure(new("vetting.decision.reviewer_mismatch", "The decision must be made by the assigned reviewer."));
+        if (decision.DecidedAt < LastChangedAt || decision.DecidedAt > changedAt)
+            return DomainResult.Failure(new("vetting.decision.timestamp.invalid", "Decision time must fall between the previous case change and this transition."));
         if (Status != VettingCaseStatus.InReview)
         {
             return DomainResult.Failure(
@@ -182,12 +202,13 @@ public sealed class VettingCase
 
         Status = status;
         LastChangedAt = changedAt;
+        decisionHistory.Add(decision);
         return DomainResult.Success();
     }
 
     public DomainResult Suspend(DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status is VettingCaseStatus.Approved or VettingCaseStatus.Rejected or VettingCaseStatus.Closed)
@@ -203,7 +224,7 @@ public sealed class VettingCase
 
     public DomainResult Close(DateTimeOffset changedAt)
     {
-        var validTime = EnsureUtc(changedAt);
+        var validTime = EnsureUtcAfterLastChange(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status == VettingCaseStatus.Closed)
@@ -218,8 +239,10 @@ public sealed class VettingCase
         return DomainResult.Success();
     }
 
-    private static DomainResult EnsureUtc(DateTimeOffset value) =>
-        value.Offset == TimeSpan.Zero
-            ? DomainResult.Success()
-            : DomainResult.Failure(new("vetting.timestamp.not_utc", "Time must be expressed in UTC."));
+    private DomainResult EnsureUtcAfterLastChange(DateTimeOffset value) =>
+        value.Offset != TimeSpan.Zero
+            ? DomainResult.Failure(new("vetting.timestamp.not_utc", "Time must be expressed in UTC."))
+            : value < LastChangedAt
+                ? DomainResult.Failure(new("vetting.timestamp.out_of_order", "A case change cannot precede its previous change."))
+                : DomainResult.Success();
 }

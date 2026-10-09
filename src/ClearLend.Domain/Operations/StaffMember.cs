@@ -53,6 +53,8 @@ public sealed class StaffMember
 
     public DomainResult RemoveRole(StaffRole role)
     {
+        if (Status == StaffStatus.Closed) return DomainResult.Failure(new("staff.role.closed", "Roles cannot be changed for a closed staff member."));
+        if (!Enum.IsDefined(role)) return DomainResult.Failure(new("staff.role.invalid", "An unsupported staff role was supplied."));
         if (!roles.Remove(role)) return DomainResult.Failure(new("staff.role.not_found", "The staff member does not have this role."));
         if (roles.Count == 0) { roles.Add(role); return DomainResult.Failure(new("staff.role.required", "A staff member must retain at least one role.")); }
         return DomainResult.Success();
@@ -71,6 +73,7 @@ public sealed class StaffMember
 
     public DomainResult Activate(DateTimeOffset changedAt) => Transition(StaffStatus.Active, StaffStatus.Invited, changedAt, "staff.activate.invalid_status", "Only an invited staff member can be activated.");
     public DomainResult Suspend(DateTimeOffset changedAt) => Transition(StaffStatus.Suspended, StaffStatus.Active, changedAt, "staff.suspend.invalid_status", "Only an active staff member can be suspended.");
+    public DomainResult Reinstate(DateTimeOffset changedAt) => Transition(StaffStatus.Active, StaffStatus.Suspended, changedAt, "staff.reinstate.invalid_status", "Only a suspended staff member can be reinstated.");
     public DomainResult Close(DateTimeOffset changedAt)
     {
         if (Status == StaffStatus.Closed) return DomainResult.Failure(new("staff.close.already_closed", "The staff member is already closed."));
@@ -81,6 +84,7 @@ public sealed class StaffMember
     {
         if (Status != expected) return DomainResult.Failure(new(code, message));
         if (changedAt.Offset != TimeSpan.Zero) return DomainResult.Failure(new("staff.timestamp.not_utc", "Time must be expressed in UTC."));
+        if (changedAt < StatusChangedAt) return DomainResult.Failure(new("staff.timestamp.out_of_order", "A status change cannot precede the previous change."));
         Status = next;
         StatusChangedAt = changedAt;
         return DomainResult.Success();

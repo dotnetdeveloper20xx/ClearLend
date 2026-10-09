@@ -35,24 +35,24 @@ public sealed class VettingCaseTests
     public void ReviewCanRequestInformationThenResumeBeforeApproval()
     {
         var vettingCase = CreateCase(VettingSubjectType.Borrower);
-        Assert.True(vettingCase.StartReview(OpenedAt.AddMinutes(1)).IsSuccess);
+        var reviewer = StartReview(vettingCase, OpenedAt.AddMinutes(1));
         Assert.True(vettingCase.RequestInformation(OpenedAt.AddMinutes(2)).IsSuccess);
 
-        var blocked = vettingCase.ApplyDecision(CreateDecision(vettingCase.Id, DecisionOutcome.Approved), OpenedAt.AddMinutes(3));
+        var blocked = vettingCase.ApplyDecision(CreateDecision(vettingCase, reviewer, DecisionOutcome.Approved, OpenedAt.AddMinutes(3)), OpenedAt.AddMinutes(3));
         Assert.False(blocked.IsSuccess);
         Assert.Equal("vetting.decision.invalid_status", blocked.Error?.Code);
 
         Assert.True(vettingCase.ResumeReview(OpenedAt.AddMinutes(4)).IsSuccess);
-        Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase.Id, DecisionOutcome.Approved), OpenedAt.AddMinutes(5)).IsSuccess);
+        Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase, reviewer, DecisionOutcome.Approved, OpenedAt.AddMinutes(5)), OpenedAt.AddMinutes(5)).IsSuccess);
     }
 
     [Fact]
     public void ReviewCanBeApproved()
     {
         var vettingCase = CreateCase(VettingSubjectType.Borrower);
-        Assert.True(vettingCase.StartReview(OpenedAt.AddMinutes(1)).IsSuccess);
+        var reviewer = StartReview(vettingCase, OpenedAt.AddMinutes(1));
 
-        Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase.Id, DecisionOutcome.Approved), OpenedAt.AddMinutes(2)).IsSuccess);
+        Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase, reviewer, DecisionOutcome.Approved, OpenedAt.AddMinutes(1)), OpenedAt.AddMinutes(2)).IsSuccess);
         Assert.Equal(VettingCaseStatus.Approved, vettingCase.Status);
     }
 
@@ -60,8 +60,8 @@ public sealed class VettingCaseTests
     public void CompletedCaseCannotBeReassigned()
     {
         var vettingCase = CreateCase(VettingSubjectType.Borrower);
-        Assert.True(vettingCase.StartReview(OpenedAt.AddMinutes(1)).IsSuccess);
-        Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase.Id, DecisionOutcome.Rejected), OpenedAt.AddMinutes(2)).IsSuccess);
+        var reviewer = StartReview(vettingCase, OpenedAt.AddMinutes(1));
+        Assert.True(vettingCase.ApplyDecision(CreateDecision(vettingCase, reviewer, DecisionOutcome.Rejected, OpenedAt.AddMinutes(1)), OpenedAt.AddMinutes(2)).IsSuccess);
 
         var result = vettingCase.AssignReviewer(new ReviewerAssignment(UserAccountId.New(), OpenedAt.AddMinutes(3)));
 
@@ -94,14 +94,22 @@ public sealed class VettingCaseTests
     private static VettingCase CreateCase(VettingSubjectType subjectType) =>
         TestResult.Get(VettingCase.Open(new VettingCaseOpening(UserAccountId.New(), subjectType, OpenedAt)));
 
-    private static VettingDecision CreateDecision(VettingCaseId caseId, DecisionOutcome outcome) => TestResult.Get(VettingDecision.Record(
+    private static UserAccountId StartReview(VettingCase vettingCase, DateTimeOffset at)
+    {
+        var reviewer = UserAccountId.New();
+        Assert.True(vettingCase.AssignReviewer(new ReviewerAssignment(reviewer, at)).IsSuccess);
+        Assert.True(vettingCase.StartReview(at).IsSuccess);
+        return reviewer;
+    }
+
+    private static VettingDecision CreateDecision(VettingCase vettingCase, UserAccountId reviewer, DecisionOutcome outcome, DateTimeOffset decidedAt) => TestResult.Get(VettingDecision.Record(
         new VettingDecisionDetails(
-            caseId,
-            UserAccountId.New(),
-            VettingSubjectType.Borrower,
+            vettingCase.Id,
+            vettingCase.SubjectAccountId,
+            vettingCase.SubjectType,
             outcome,
             TestResult.Get(DecisionReason.Create("Reviewed.")),
-            UserAccountId.New(),
+            reviewer,
             TestResult.Get(PolicyVersion.Create("2026.1")),
-            TestResult.Get(UtcTimestamp.Create(OpenedAt)))));
+            TestResult.Get(UtcTimestamp.Create(decidedAt)))));
 }

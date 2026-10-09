@@ -48,17 +48,10 @@ public sealed class VettingDecision
                 new("vetting.decision.details.required", "Decision details are required."));
         }
 
-        if (details.Reason is null)
-        {
-            return DomainResults.Failure<VettingDecision>(
-                new("vetting.decision_reason.required", "A decision reason is required."));
-        }
-
-        if (details.PolicyVersion is null)
-        {
-            return DomainResults.Failure<VettingDecision>(
-                new("vetting.policy_version.required", "The policy version is required."));
-        }
+        var valid = details.Validate();
+        if (!valid.IsSuccess) return DomainResults.Failure<VettingDecision>(valid.Error!);
+        if (id is { } suppliedId && suppliedId.Value == Guid.Empty)
+            return DomainResults.Failure<VettingDecision>(new("vetting.decision_id.empty", "A decision identifier cannot be empty."));
 
         return DomainResults.Success<VettingDecision>(
             new(id ?? VettingDecisionId.New(), details));
