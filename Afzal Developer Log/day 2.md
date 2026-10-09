@@ -1,132 +1,131 @@
 # ClearLend Development Log — Day 2
 
 **Date:** 9 October 2026  
-**Status:** In progress — more work will be added later today  
-**Scope:** Domain and Application layers only
+**Status:** Still in progress  
+**Today’s focus:** Build the internal business foundation that will support borrower registration.
 
-## Objective
+## Why we did this work
 
-Establish the borrower-registration slice and introduce a clean CQRS/MediatR application flow. Infrastructure, database mappings, API endpoints, payment providers, notification providers, and external credit integrations remain out of scope.
+Yesterday we created the first visible customer journey: a borrower can register, provide their details, and record whether they agree to credit checking.
 
-## Domain decisions
+Today we stepped back and asked: when a borrower registers, who inside ClearLend receives that work, reviews it, makes decisions, and follows it through?
 
-Borrower registration creates and associates a `UserAccount`, `BorrowerProfile`, `PersonalName`, and `ConsentRecord`.
+We do not want registration to create a record that simply sits in a database. We want it to start real business work that our staff can own, review, complete, or escalate.
 
-Registration is allowed whether consent is granted or declined. Consent is intentionally simple and compliance-focused. It records status, policy version, UTC timestamp, and an identifier. Initial registration accepts only `Granted` or `Declined`; `Withdrawn` remains available for later consent-history operations.
+That is why today focused on staff, responsibilities, queues, work items, assignment, permissions, and escalation. We stayed within the Domain and Application layers. The database, API, external credit provider, payment provider, and notification provider are intentionally still waiting for later work.
 
-Consent history is retained on the borrower profile. The latest decision is available through `LatestConsent`.
+## The story of what we created
 
-The profile lifecycle is:
+### Staff and roles
+
+We created the `StaffMember` class because ClearLend needs to know who its internal staff are. A staff member is linked to a user account and has a status such as invited, active, suspended, or closed.
+
+This prevents the system from assigning important work to somebody who has not been activated, has been suspended, or has left the business.
+
+We also created the `StaffRole` list. It currently covers Operations Staff, Compliance Reviewer, Credit Reviewer, Finance Operator, Servicing Operator, Support Agent, and Application Owner. These roles describe the type of work a person is allowed to perform.
+
+We added rules so every staff member has at least one valid role. We also added the ability to add or remove roles later, while preventing somebody from being left with no role.
+
+### Work items
+
+We created the `WorkItem` class because a registration, review, exception, or support request needs to become something that can be tracked.
+
+A work item records what kind of work is needed, what it relates to, its priority, its current status, when it was created, and who is handling it. It can be opened, assigned, completed, or escalated.
+
+For borrower registration, this means the registration can become an Operations work item. The borrower profile remains the borrower’s information; the work item represents the internal task our team must carry out.
+
+### Queues
+
+We created `WorkQueueDefinition` because different work belongs with different teams. A registration may begin in Operations, a risk question may go to Compliance, and a credit-limit review may go to Credit Review.
+
+A queue can have staff members as members. We added rules so only active staff can join a queue. This gives us a simple operating model: work enters a queue, an appropriate person takes responsibility, and the work remains traceable.
+
+### Safe assignment
+
+We connected every work item to its queue before it can be assigned. The application now checks that the proposed assignee is active and belongs to that queue.
+
+This prevents work being given to the wrong team or to somebody who is not currently allowed to work.
+
+### Escalation history
+
+We updated escalation so it does more than mark work as urgent. Every escalation keeps its reason and time.
+
+This means a manager can later understand what happened, when the concern appeared, and whether the issue was escalated more than once. Escalation also raises priority to urgent and updates the status-change time.
+
+### Permissions and validation
+
+We introduced permission codes and an authorization pipeline for protected actions. Before staff can open, assign, complete, escalate, or manage queue membership, the request is checked for the required permission.
+
+We kept request validation separate from business rules. Command validators check that incoming data is shaped correctly. The Domain classes make the final business decisions. This keeps the code easier to understand and stops important rules being hidden inside handlers.
+
+## Main classes created or updated
+
+- `StaffMember` — represents an internal employee and controls their lifecycle and roles.
+- `StaffRole` and `StaffStatus` — describe responsibilities and whether somebody may work.
+- `WorkItem` — represents a piece of internal business work.
+- `WorkQueueDefinition` — represents the team queue that owns work.
+- `WorkEscalation` — preserves each escalation reason and time.
+- `PermissionCode` — gives protected actions consistent permission names.
+- Staff commands and handlers — invite, activate, suspend, and close staff.
+- Work-item commands and handlers — open, assign, complete, and escalate work.
+- Queue-membership commands and handlers — add and remove staff from queues.
+- Authorization and validation pipeline behaviours — apply common checks before handlers run.
+- Repository and unit-of-work interfaces — describe what Infrastructure will provide later.
+
+We also added and updated tests around role rules, staff lifecycle, escalation history, queue membership, and command validation.
+
+## How this supports borrower registration
+
+The intended journey is now:
 
 ```text
-Incomplete → Completed → ReadyForReview → Active
-                                      ↘ Suspended
-                                      ↘ Closed
+Borrower registers
+        ↓
+Borrower profile and consent are recorded
+        ↓
+An internal registration work item is opened
+        ↓
+The work item enters an Operations queue
+        ↓
+An active Operations staff member takes ownership
+        ↓
+Compliance and credit work can be routed to the right teams
+        ↓
+Concerns can be escalated and retained in history
+        ↓
+The business records a decision and eventually notifies the borrower
 ```
 
-## Domain work completed
+Only the first part of this journey is fully connected to borrower registration so far. Today’s work creates the internal foundation needed for the rest.
 
-### Updated classes
+## What the code review found and what we fixed
 
-- `BorrowerProfile`
-  - Requires a valid user-account identifier and consent at creation.
-  - Stores consent history and exposes the latest decision.
-  - Supports explicit completion timestamps.
-  - Uses the `Completed` state before review submission.
-  - Preserves lifecycle and UTC validation.
-- `BorrowerProfileCreation`
-  - Now includes `ConsentRecord`.
-- `ProfileState`
-  - Added `Completed`.
-- `DomainResult`
-  - Added structured `DomainValidationError` details.
+After the first five phases, we reviewed the work as senior architects rather than assuming that compiling code was automatically good code.
 
-### New classes
+The review found that role values and queue types needed stronger validation. Work items needed explicit queue ownership. Assignment needed to check that the person was active and in the correct queue. Escalation needed history instead of only a current flag. We corrected these issues and added regression tests for the important rules.
 
-- `ConsentRecord`
-- `CreditAssessmentRequest`
-- `CreditAssessmentResult`
-- `Payment`
-- `Fee`
-- `PaymentAllocation`
-- `Notification`
+The review also confirmed that audit-event generation and complete operational decision workflows still need more design. We have the correct direction and abstractions, but we have not pretended that persistence, Infrastructure, or external integrations are complete.
 
-Credit, payment, and notification classes are preliminary models for future work and are not considered complete production features.
+## Where we stand now
 
-### Domain tests
+Phases 1–5 are complete within the Domain and Application layers:
 
-Added or updated tests for borrower-profile consent and lifecycle, consent records, user-account validation, credit-assessment transitions, payment allocations, and notification delivery/read behavior.
+1. Staff and roles
+2. Internal work management
+3. Borrower-registration work
+4. Escalation
+5. Queues, assignment rules, and authorization foundations
 
-## Application work completed
+Both Domain and Application projects build successfully with zero warnings and zero errors.
 
-The registration flow is now:
+The test runner currently stops after discovering the test assembly in this environment. The test projects compile successfully, but runtime test completion still needs investigation before we claim every test has executed successfully.
 
-```text
-RegisterBorrowerCommand
-        ↓
-ValidationBehavior
-        ↓
-RegisterBorrowerCommandValidator
-        ↓
-RegisterBorrowerHandler
-        ↓
-UserAccount + BorrowerProfile + ConsentRecord
-```
+## The bigger picture
 
-### New application classes
+Today’s work is not the complete ClearLend platform. It is the internal shop floor behind the platform.
 
-- `RegisterBorrowerCommand`
-  - MediatR request containing identity, email, name, and consent input.
-- `RegisterBorrowerResult`
-  - Returns borrower profile ID and profile state.
-- `RegisterBorrowerHandler`
-  - Orchestrates value-object creation, duplicate checks, aggregate creation, repository calls, and unit-of-work saving.
-- `RegisterBorrowerCommandValidator`
-  - Validates required fields, lengths, email format, and registration consent status.
-- `ValidationBehavior<TRequest, TResponse>`
-  - Runs FluentValidation before handlers and returns structured result errors.
-- `DependencyInjection`
-  - Registers MediatR, validators, and the validation behavior.
+Before adding credit scoring, credit limits, payments, fees, notifications, dashboards, and external integrations, ClearLend needs to know who performs the work and how that work moves through the business. The classes created today give us that starting structure.
 
-### Application abstractions
+The next sensible step is to deepen the operational foundation—especially audit history and business decisions—before moving into detailed compliance and vetting workflows.
 
-- `IUserAccountRepository`
-  - Duplicate checks and account persistence.
-- `IBorrowerProfileRepository`
-  - Borrower-profile persistence.
-- `IUnitOfWork`
-  - Atomic save boundary; Infrastructure implementation is deferred.
-
-### Application tests
-
-Added registration handler tests, invalid-input tests, declined-consent tests, duplicate-check coverage, and a MediatR validation-pipeline test.
-
-## Design principles applied
-
-- Domain rules remain in Domain entities and value objects.
-- Application validators handle command shape and boundary validation.
-- Handlers orchestrate and do not own core business rules.
-- Notifications remain a separate subsystem.
-- Fees must identify amount, percentage, payer, recipient, and allocation.
-- Credit scoring and credit-limit processing will be asynchronous future work.
-- Infrastructure is intentionally not being implemented yet.
-
-## Verification
-
-- Domain project builds successfully.
-- Application project builds successfully.
-- Domain test project builds successfully.
-- Application test project builds successfully.
-- Full solution compilation succeeded with zero warnings and zero errors.
-- No Infrastructure implementation was added for the registration flow.
-
-## Known limitations and follow-up work
-
-- The test host currently hangs after test discovery in this environment, so runtime test completion still needs to be resolved and confirmed.
-- Credit, payment, and notification classes remain preliminary.
-- Repository uniqueness guarantees and real transaction behavior will be implemented later in Infrastructure.
-- API endpoints and external contracts will be added later.
-
-## Day 2 status
-
-The borrower-registration Domain and Application foundations are in place. Day 2 remains in progress; additional work and decisions will be appended to this file later today.
+More work and decisions will be added to this log later today.
