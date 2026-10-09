@@ -9,13 +9,16 @@ public sealed class BorrowerProfile
     private BorrowerProfile(
         BorrowerProfileId id,
         UserAccountId userAccountId,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        ConsentRecord consent)
     {
         Id = id;
         UserAccountId = userAccountId;
         CreatedAt = createdAt;
         State = ProfileState.Incomplete;
         StateChangedAt = createdAt;
+        LatestConsent = consent;
+        consentHistory.Add(consent);
     }
 
     public BorrowerProfileId Id { get; }
@@ -29,6 +32,24 @@ public sealed class BorrowerProfile
     public DateTimeOffset CreatedAt { get; }
 
     public DateTimeOffset StateChangedAt { get; private set; }
+
+    public ConsentRecord LatestConsent { get; private set; }
+
+    public IReadOnlyList<ConsentRecord> ConsentHistory => consentHistory.AsReadOnly();
+
+    private readonly List<ConsentRecord> consentHistory = [];
+
+    public DomainResult RecordConsent(ConsentRecord? consent)
+    {
+        if (consent is null)
+        {
+            return DomainResult.Failure(new("borrower.consent.required", "A consent record is required."));
+        }
+
+        LatestConsent = consent;
+        consentHistory.Add(consent);
+        return DomainResult.Success();
+    }
 
     public static DomainResult<BorrowerProfile> Create(
         BorrowerProfileCreation? creation,
@@ -46,11 +67,29 @@ public sealed class BorrowerProfile
                 new("borrower.created_at.not_utc", "Creation time must be expressed in UTC."));
         }
 
+        if (creation.UserAccountId.Value == Guid.Empty)
+        {
+            return DomainResults.Failure<BorrowerProfile>(
+                new("borrower.user_account.required", "A user account is required for a borrower profile."));
+        }
+
+        if (creation.Consent is null)
+        {
+            return DomainResults.Failure<BorrowerProfile>(
+                new("borrower.consent.required", "A consent decision is required during borrower registration."));
+        }
+
+        if (creation.Consent.Status is not (ConsentStatus.Granted or ConsentStatus.Declined))
+        {
+            return DomainResults.Failure<BorrowerProfile>(
+                new("borrower.consent.invalid_registration_status", "Registration consent must be granted or declined."));
+        }
+
         return DomainResults.Success<BorrowerProfile>(
-            new(id ?? BorrowerProfileId.New(), creation.UserAccountId, creation.CreatedAt));
+            new(id ?? BorrowerProfileId.New(), creation.UserAccountId, creation.CreatedAt, creation.Consent));
     }
 
-    public DomainResult Complete(PersonalName? name)
+    public DomainResult Complete(PersonalName? name, DateTimeOffset completedAt)
     {
         if (State != ProfileState.Incomplete)
         {
@@ -64,7 +103,11 @@ public sealed class BorrowerProfile
                 new("borrower.name.required", "A personal name is required."));
         }
 
+        var validTime = EnsureUtc(completedAt);
+        if (!validTime.IsSuccess) return validTime;
+
         Name = name;
+        TransitionTo(ProfileState.Completed, completedAt);
         return DomainResult.Success();
     }
 
@@ -73,7 +116,7 @@ public sealed class BorrowerProfile
         var validTime = EnsureUtc(changedAt);
         if (!validTime.IsSuccess) return validTime;
 
-        if (State != ProfileState.Incomplete || Name is null)
+        if (State != ProfileState.Completed || Name is null)
         {
             return DomainResult.Failure(
                 new("borrower.profile.submit.invalid_state", "A completed profile is required before review submission."));

@@ -3,8 +3,9 @@ namespace ClearLend.Domain.Borrowers;
 public enum ProfileState
 {
     Incomplete = 1,
-    ReadyForReview = 2,
-    Active = 3,
-    Suspended = 4,
-    Closed = 5
+    Completed = 2,
+    ReadyForReview = 3,
+    Active = 4,
+    Suspended = 5,
+    Closed = 6
 }

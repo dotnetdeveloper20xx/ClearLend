@@ -19,12 +19,50 @@ public sealed class BorrowerProfileTests
     }
 
     [Fact]
+    public void CanRecordConsentOnBorrowerProfile()
+    {
+        var profile = CreateProfile();
+        var consent = TestResult.Get(ConsentRecord.Record(ConsentStatus.Granted, "v1", CreatedAt));
+
+        var result = profile.RecordConsent(consent);
+
+        Assert.True(result.IsSuccess);
+        Assert.Same(consent, profile.LatestConsent);
+    }
+
+    [Fact]
+    public void CompletionRequiresAnIncompleteProfile()
+    {
+        var profile = CreateProfile();
+        var name = TestResult.Get(PersonalName.Create("Aisha", "Khan"));
+        Assert.True(profile.Complete(name, CreatedAt.AddMinutes(1)).IsSuccess);
+
+        var result = profile.Complete(name, CreatedAt.AddMinutes(2));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("borrower.profile.complete.invalid_state", result.Error?.Code);
+    }
+
+    [Fact]
+    public void CreationRequiresAUserAccount()
+    {
+        var result = BorrowerProfile.Create(new BorrowerProfileCreation(
+            default,
+            CreatedAt,
+            TestResult.Get(ConsentRecord.Record(ConsentStatus.Declined, "v1", CreatedAt))));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("borrower.user_account.required", result.Error?.Code);
+    }
+
+
+    [Fact]
     public void CompleteAndSubmitForReviewMovesProfileToReadyForReview()
     {
         var profile = CreateProfile();
         var name = TestResult.Get(PersonalName.Create("Aisha", "Khan"));
 
-        Assert.True(profile.Complete(name).IsSuccess);
+        Assert.True(profile.Complete(name, CreatedAt.AddMinutes(1)).IsSuccess);
         Assert.True(profile.SubmitForReview(CreatedAt.AddMinutes(1)).IsSuccess);
         Assert.Equal(ProfileState.ReadyForReview, profile.State);
     }
@@ -53,7 +91,7 @@ public sealed class BorrowerProfileTests
     {
         var profile = CreateProfile();
         var decision = CreateDecision(profile.UserAccountId, DecisionOutcome.Approved);
-        Assert.True(profile.Complete(TestResult.Get(PersonalName.Create("Aisha", "Khan"))).IsSuccess);
+        Assert.True(profile.Complete(TestResult.Get(PersonalName.Create("Aisha", "Khan")), CreatedAt.AddMinutes(1)).IsSuccess);
         Assert.True(profile.SubmitForReview(CreatedAt.AddMinutes(1)).IsSuccess);
         Assert.True(profile.Activate(decision, CreatedAt.AddMinutes(2)).IsSuccess);
         Assert.True(profile.Suspend(CreatedAt.AddMinutes(3)).IsSuccess);
@@ -72,7 +110,10 @@ public sealed class BorrowerProfileTests
     }
 
     private static BorrowerProfile CreateProfile() =>
-        TestResult.Get(BorrowerProfile.Create(new BorrowerProfileCreation(UserAccountId.New(), CreatedAt)));
+        TestResult.Get(BorrowerProfile.Create(new BorrowerProfileCreation(
+            UserAccountId.New(),
+            CreatedAt,
+            TestResult.Get(ConsentRecord.Record(ConsentStatus.Declined, "v1", CreatedAt)))));
 
     private static VettingDecision CreateDecision(UserAccountId subjectAccountId, DecisionOutcome outcome) => TestResult.Get(VettingDecision.Record(
         new VettingDecisionDetails(

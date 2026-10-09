@@ -68,6 +68,40 @@ public sealed class UserAccountTests
         Assert.Equal("identity.registration_time.not_utc", result.Error?.Code);
     }
 
+    [Fact]
+    public void RegistrationRequiresIdentityAndEmailValues()
+    {
+        var result = UserAccount.Register(new UserAccountRegistration(
+            null!, null!, RegisteredAt));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("identity.account.values_required", result.Error?.Code);
+    }
+
+    [Fact]
+    public void PendingAccountCannotBeActivatedTwice()
+    {
+        var account = CreateAccount();
+        Assert.True(account.Activate(RegisteredAt.AddMinutes(1)).IsSuccess);
+
+        var result = account.Activate(RegisteredAt.AddMinutes(2));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("identity.account.activate.invalid_status", result.Error?.Code);
+    }
+
+    [Fact]
+    public void ClosedAccountCannotBeReactivated()
+    {
+        var account = CreateAccount();
+        Assert.True(account.Close(RegisteredAt.AddMinutes(1)).IsSuccess);
+
+        var result = account.Activate(RegisteredAt.AddMinutes(2));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("identity.account.activate.invalid_status", result.Error?.Code);
+    }
+
     private static UserAccount CreateAccount(string email = "person@example.com") =>
         TestResult.Get(UserAccount.Register(new UserAccountRegistration(
             CreateSubject("auth0|user-123"), CreateEmail(email), RegisteredAt)));

@@ -2,7 +2,12 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ClearLend.Domain.Common;
 
-public sealed record DomainError(string Code, string Message);
+public sealed record DomainValidationError(string PropertyName, string Code, string Message);
+
+public sealed record DomainError(
+    string Code,
+    string Message,
+    IReadOnlyList<DomainValidationError>? Details = null);
 
 public sealed class DomainResult<T>
 {
