@@ -6,6 +6,9 @@ namespace ClearLend.Domain.Vetting;
 public sealed class VettingCase
 {
     private readonly List<VettingDecision> decisionHistory = [];
+    private readonly List<ReviewerAssignment> reviewerAssignmentHistory = [];
+    private readonly List<VettingReviewActivity> reviewActivityHistory = [];
+    private readonly List<VettingInformationRequest> informationRequestHistory = [];
     private VettingCase(
         VettingCaseId id,
         UserAccountId subjectAccountId,
@@ -36,6 +39,9 @@ public sealed class VettingCase
 
     public DateTimeOffset? ClosedAt { get; private set; }
     public IReadOnlyList<VettingDecision> DecisionHistory => decisionHistory.AsReadOnly();
+    public IReadOnlyList<ReviewerAssignment> ReviewerAssignmentHistory => reviewerAssignmentHistory.AsReadOnly();
+    public IReadOnlyList<VettingReviewActivity> ReviewActivityHistory => reviewActivityHistory.AsReadOnly();
+    public IReadOnlyList<VettingInformationRequest> InformationRequestHistory => informationRequestHistory.AsReadOnly();
 
     public static DomainResult<VettingCase> Open(
         VettingCaseOpening? opening,
@@ -73,42 +79,38 @@ public sealed class VettingCase
         var validTime = EnsureUtcAfterLastChange(assignment.AssignedAt);
         if (!validTime.IsSuccess) return validTime;
 
-        if (assignment.ReviewerAccountId.Value == Guid.Empty || assignment.ReviewerAccountId == SubjectAccountId)
-            return DomainResult.Failure(new("vetting.reviewer_assignment.invalid", "The reviewer must be a valid account distinct from the subject."));
+        if (assignment.ReviewerAccountId.Value == Guid.Empty || assignment.AssignedByAccountId.Value == Guid.Empty || assignment.ReviewerAccountId == SubjectAccountId)
+            return DomainResult.Failure(new("vetting.reviewer_assignment.invalid", "The reviewer and assigning staff account must be valid, and the reviewer must be distinct from the subject."));
 
-        if (Status is VettingCaseStatus.Approved or VettingCaseStatus.Rejected or VettingCaseStatus.Closed)
+        if (Status is not (VettingCaseStatus.Open or VettingCaseStatus.AwaitingInformation))
         {
             return DomainResult.Failure(
-                new("vetting.reviewer_assignment.invalid_status", "A completed or closed case cannot be assigned."));
+                new("vetting.reviewer_assignment.invalid_status", "A reviewer can only be assigned or changed before review is underway."));
         }
+
+        if (ReviewerAccountId == assignment.ReviewerAccountId)
+            return DomainResult.Failure(new("vetting.reviewer_assignment.unchanged", "The selected reviewer is already assigned to this case."));
 
         ReviewerAccountId = assignment.ReviewerAccountId;
         LastChangedAt = assignment.AssignedAt;
+        reviewerAssignmentHistory.Add(assignment);
         return DomainResult.Success();
     }
 
-    public DomainResult StartReview(DateTimeOffset changedAt)
+    public DomainResult StartReview(UserAccountId reviewerAccountId, DateTimeOffset changedAt) =>
+        TransitionToReview(reviewerAccountId, changedAt, VettingCaseStatus.Open, VettingReviewAction.Started,
+            "vetting.review.start.invalid_status", "Only an open case can enter review.");
+
+    public DomainResult RequestInformation(VettingInformationRequest? request)
     {
-        var validTime = EnsureUtcAfterLastChange(changedAt);
-        if (!validTime.IsSuccess) return validTime;
+        if (request is null)
+            return DomainResult.Failure(new("vetting.information_request.required", "Information-request details are required."));
+        if (request.VettingCaseId != Id)
+            return DomainResult.Failure(new("vetting.information_request.case_mismatch", "The information request must belong to this case."));
+        if (ReviewerAccountId is null || request.RequestedByAccountId != ReviewerAccountId)
+            return DomainResult.Failure(new("vetting.information_request.reviewer_mismatch", "Only the assigned reviewer can request information."));
 
-        if (Status != VettingCaseStatus.Open)
-        {
-            return DomainResult.Failure(
-                new("vetting.review.start.invalid_status", "Only an open case can enter review."));
-        }
-
-        if (ReviewerAccountId is null)
-            return DomainResult.Failure(new("vetting.review.reviewer.required", "A reviewer must be assigned before review can start."));
-
-        Status = VettingCaseStatus.InReview;
-        LastChangedAt = changedAt;
-        return DomainResult.Success();
-    }
-
-    public DomainResult RequestInformation(DateTimeOffset changedAt)
-    {
-        var validTime = EnsureUtcAfterLastChange(changedAt);
+        var validTime = EnsureUtcAfterLastChange(request.RequestedAt);
         if (!validTime.IsSuccess) return validTime;
 
         if (Status != VettingCaseStatus.InReview)
@@ -118,41 +120,20 @@ public sealed class VettingCase
         }
 
         Status = VettingCaseStatus.AwaitingInformation;
-        LastChangedAt = changedAt;
+        LastChangedAt = request.RequestedAt;
+        informationRequestHistory.Add(request);
         return DomainResult.Success();
     }
 
-    public DomainResult ResumeReview(DateTimeOffset changedAt)
-    {
-        var validTime = EnsureUtcAfterLastChange(changedAt);
-        if (!validTime.IsSuccess) return validTime;
+    public DomainResult ResumeReview(UserAccountId reviewerAccountId, DateTimeOffset changedAt) =>
+        TransitionToReview(reviewerAccountId, changedAt, VettingCaseStatus.AwaitingInformation,
+            VettingReviewAction.ResumedAfterInformation, "vetting.review.resume.invalid_status",
+            "Only a case awaiting information can resume review.");
 
-        if (Status != VettingCaseStatus.AwaitingInformation)
-        {
-            return DomainResult.Failure(
-                new("vetting.review.resume.invalid_status", "Only a case awaiting information can resume review."));
-        }
-
-        Status = VettingCaseStatus.InReview;
-        LastChangedAt = changedAt;
-        return DomainResult.Success();
-    }
-
-    public DomainResult ResumeFromSuspension(DateTimeOffset changedAt)
-    {
-        var validTime = EnsureUtcAfterLastChange(changedAt);
-        if (!validTime.IsSuccess) return validTime;
-
-        if (Status != VettingCaseStatus.Suspended)
-        {
-            return DomainResult.Failure(
-                new("vetting.suspension.resume.invalid_status", "Only a suspended case can resume review."));
-        }
-
-        Status = VettingCaseStatus.InReview;
-        LastChangedAt = changedAt;
-        return DomainResult.Success();
-    }
+    public DomainResult ResumeFromSuspension(UserAccountId reviewerAccountId, DateTimeOffset changedAt) =>
+        TransitionToReview(reviewerAccountId, changedAt, VettingCaseStatus.Suspended,
+            VettingReviewAction.ResumedAfterSuspension, "vetting.suspension.resume.invalid_status",
+            "Only a suspended case can resume review.");
 
     public DomainResult ApplyDecision(VettingDecision? decision, DateTimeOffset changedAt)
     {
@@ -245,4 +226,28 @@ public sealed class VettingCase
             : value < LastChangedAt
                 ? DomainResult.Failure(new("vetting.timestamp.out_of_order", "A case change cannot precede its previous change."))
                 : DomainResult.Success();
+
+    private DomainResult TransitionToReview(
+        UserAccountId reviewerAccountId,
+        DateTimeOffset changedAt,
+        VettingCaseStatus expectedStatus,
+        VettingReviewAction action,
+        string invalidStatusCode,
+        string invalidStatusMessage)
+    {
+        if (reviewerAccountId.Value == Guid.Empty || ReviewerAccountId is null)
+            return DomainResult.Failure(new("vetting.review.reviewer.required", "An assigned reviewer is required to start or resume review."));
+        if (reviewerAccountId != ReviewerAccountId)
+            return DomainResult.Failure(new("vetting.review.reviewer_mismatch", "Only the assigned reviewer can start or resume this case."));
+
+        var validTime = EnsureUtcAfterLastChange(changedAt);
+        if (!validTime.IsSuccess) return validTime;
+        if (Status != expectedStatus)
+            return DomainResult.Failure(new(invalidStatusCode, invalidStatusMessage));
+
+        Status = VettingCaseStatus.InReview;
+        LastChangedAt = changedAt;
+        reviewActivityHistory.Add(new VettingReviewActivity(reviewerAccountId, action, changedAt));
+        return DomainResult.Success();
+    }
 }

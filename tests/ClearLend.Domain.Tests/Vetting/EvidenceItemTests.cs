@@ -1,4 +1,5 @@
 using ClearLend.Domain.Vetting;
+using ClearLend.Domain.Identity;
 
 namespace ClearLend.Domain.Tests.Vetting;
 
@@ -31,7 +32,7 @@ public sealed class EvidenceItemTests
         var reference = TestResult.Get(StorageReference.Create("blob://evidence/123"));
 
         Assert.True(item.Submit(new EvidenceSubmission(reference, RequestedAt.AddMinutes(1))).IsSuccess);
-        Assert.True(item.Accept(RequestedAt.AddMinutes(2)).IsSuccess);
+        Assert.True(item.Accept(UserAccountId.New(), RequestedAt.AddMinutes(2)).IsSuccess);
         Assert.Equal(EvidenceStatus.Accepted, item.Status);
     }
 
@@ -40,7 +41,7 @@ public sealed class EvidenceItemTests
     {
         var item = CreateSubmittedItem();
 
-        var result = item.Reject(new EvidenceRejection(" ", RequestedAt.AddMinutes(2)));
+        var result = item.Reject(new EvidenceRejection(" ", UserAccountId.New(), RequestedAt.AddMinutes(2)));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("evidence.rejection_reason.required", result.Error?.Code);
@@ -50,7 +51,7 @@ public sealed class EvidenceItemTests
     public void RejectedEvidenceMustBeReplacedWithANewItem()
     {
         var item = CreateSubmittedItem();
-        Assert.True(item.Reject(new EvidenceRejection("Image is unreadable.", RequestedAt.AddMinutes(2))).IsSuccess);
+        Assert.True(item.Reject(new EvidenceRejection("Image is unreadable.", UserAccountId.New(), RequestedAt.AddMinutes(2))).IsSuccess);
 
         var replacement = TestResult.Get(StorageReference.Create("blob://evidence/456"));
         var result = item.Submit(new EvidenceSubmission(replacement, RequestedAt.AddMinutes(3)));
@@ -63,7 +64,7 @@ public sealed class EvidenceItemTests
     public void AcceptedEvidenceCanExpireAndBeSuperseded()
     {
         var item = CreateSubmittedItem();
-        Assert.True(item.Accept(RequestedAt.AddMinutes(2)).IsSuccess);
+        Assert.True(item.Accept(UserAccountId.New(), RequestedAt.AddMinutes(2)).IsSuccess);
         Assert.True(item.Expire(RequestedAt.AddMinutes(3)).IsSuccess);
         Assert.True(item.Supersede(RequestedAt.AddMinutes(4)).IsSuccess);
 
@@ -79,8 +80,20 @@ public sealed class EvidenceItemTests
         Assert.Equal("evidence.submission.required", result.Error?.Code);
     }
 
+    [Fact]
+    public void EvidenceReviewRetainsReviewerIdentity()
+    {
+        var item = CreateSubmittedItem();
+        var reviewer = UserAccountId.New();
+
+        Assert.True(item.Accept(reviewer, RequestedAt.AddMinutes(2)).IsSuccess);
+
+        Assert.Equal(reviewer, item.ReviewedByAccountId);
+        Assert.Equal(RequestedAt.AddMinutes(2), item.ReviewedAt);
+    }
+
     private static EvidenceItem CreateItem() =>
-        TestResult.Get(EvidenceItem.Request(new EvidenceRequest(VettingCaseId.New(), EvidenceType.Identity, RequestedAt)));
+        TestResult.Get(EvidenceItem.Request(new EvidenceRequest(VettingCaseId.New(), EvidenceType.Identity, UserAccountId.New(), "Please provide proof of identity.", RequestedAt)));
 
     private static EvidenceItem CreateSubmittedItem()
     {

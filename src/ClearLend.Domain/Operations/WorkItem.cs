@@ -2,7 +2,7 @@ using ClearLend.Domain.Common;
 
 namespace ClearLend.Domain.Operations;
 
-public enum WorkItemStatus { Open = 1, InProgress = 2, Completed = 3, Cancelled = 4 }
+public enum WorkItemStatus { Open = 1, InProgress = 2, Completed = 3, Cancelled = 4, WaitingForInformation = 5 }
 public enum WorkItemPriority { Low = 1, Normal = 2, High = 3, Urgent = 4 }
 public enum WorkItemType { Registration = 1, Vetting = 2, CreditReview = 3, Support = 4, Finance = 5, Servicing = 6 }
 public readonly record struct WorkItemId(Guid Value) { public static WorkItemId New() => new(Guid.NewGuid()); }
@@ -62,6 +62,26 @@ public sealed class WorkItem
         if (Status != WorkItemStatus.InProgress) return DomainResult.Failure(new("work_item.complete.invalid_status", "Only an in-progress work item can be completed."));
         if (!ValidChangeTime(changedAt)) return InvalidChangeTime();
         Status = WorkItemStatus.Completed; StatusChangedAt = changedAt; return DomainResult.Success();
+    }
+
+    public DomainResult WaitForInformation(DateTimeOffset changedAt)
+    {
+        if (Status != WorkItemStatus.InProgress || AssignedTo is null)
+            return DomainResult.Failure(new("work_item.wait_for_information.invalid_status", "Only assigned in-progress work can wait for information."));
+        if (!ValidChangeTime(changedAt)) return InvalidChangeTime();
+        Status = WorkItemStatus.WaitingForInformation;
+        StatusChangedAt = changedAt;
+        return DomainResult.Success();
+    }
+
+    public DomainResult ResumeAfterInformation(DateTimeOffset changedAt)
+    {
+        if (Status != WorkItemStatus.WaitingForInformation || AssignedTo is null)
+            return DomainResult.Failure(new("work_item.resume_information.invalid_status", "Only work waiting for information with an assigned owner can resume."));
+        if (!ValidChangeTime(changedAt)) return InvalidChangeTime();
+        Status = WorkItemStatus.InProgress;
+        StatusChangedAt = changedAt;
+        return DomainResult.Success();
     }
 
     public DomainResult Escalate(string? reason, DateTimeOffset escalatedAt, StaffMemberId? responsibleStaffMemberId = null)

@@ -1,4 +1,5 @@
 using ClearLend.Domain.Common;
+using ClearLend.Domain.Identity;
 
 namespace ClearLend.Domain.Vetting;
 
@@ -8,11 +9,15 @@ public sealed class EvidenceItem
         EvidenceItemId id,
         VettingCaseId vettingCaseId,
         EvidenceType type,
+        UserAccountId requestedByAccountId,
+        string requestReason,
         DateTimeOffset requestedAt)
     {
         Id = id;
         VettingCaseId = vettingCaseId;
         Type = type;
+        RequestedByAccountId = requestedByAccountId;
+        RequestReason = requestReason;
         RequestedAt = requestedAt;
         StatusChangedAt = requestedAt;
         Status = EvidenceStatus.Requested;
@@ -24,6 +29,10 @@ public sealed class EvidenceItem
 
     public EvidenceType Type { get; }
 
+    public UserAccountId RequestedByAccountId { get; }
+
+    public string RequestReason { get; }
+
     public EvidenceStatus Status { get; private set; }
 
     public StorageReference? StorageReference { get; private set; }
@@ -33,6 +42,8 @@ public sealed class EvidenceItem
     public DateTimeOffset? SubmittedAt { get; private set; }
 
     public DateTimeOffset? ReviewedAt { get; private set; }
+
+    public UserAccountId? ReviewedByAccountId { get; private set; }
 
     public DateTimeOffset StatusChangedAt { get; private set; }
 
@@ -53,13 +64,15 @@ public sealed class EvidenceItem
             return DomainResults.Failure<EvidenceItem>(
                 new("evidence.requested_at.not_utc", "Request time must be expressed in UTC."));
         }
-        if (request.VettingCaseId.Value == Guid.Empty || !Enum.IsDefined(request.Type))
-            return DomainResults.Failure<EvidenceItem>(new("evidence.request.invalid", "A valid case and supported evidence type are required."));
+        if (request.VettingCaseId.Value == Guid.Empty || request.RequestedByAccountId.Value == Guid.Empty || !Enum.IsDefined(request.Type))
+            return DomainResults.Failure<EvidenceItem>(new("evidence.request.invalid", "A valid case, requester, and supported evidence type are required."));
+        if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Trim().Length > 1000)
+            return DomainResults.Failure<EvidenceItem>(new("evidence.request.reason.invalid", "A clear evidence-request explanation of at most 1000 characters is required."));
         if (id is { } suppliedId && suppliedId.Value == Guid.Empty)
             return DomainResults.Failure<EvidenceItem>(new("evidence.item_id.empty", "An evidence-item identifier cannot be empty."));
 
         return DomainResults.Success<EvidenceItem>(
-            new(id ?? EvidenceItemId.New(), request.VettingCaseId, request.Type, request.RequestedAt));
+            new(id ?? EvidenceItemId.New(), request.VettingCaseId, request.Type, request.RequestedByAccountId, request.Reason.Trim(), request.RequestedAt));
     }
 
     public DomainResult Submit(EvidenceSubmission? submission)
@@ -89,9 +102,9 @@ public sealed class EvidenceItem
         return DomainResult.Success();
     }
 
-    public DomainResult Accept(DateTimeOffset reviewedAt)
+    public DomainResult Accept(UserAccountId reviewedByAccountId, DateTimeOffset reviewedAt)
     {
-        return Review(EvidenceStatus.Accepted, null, reviewedAt);
+        return Review(EvidenceStatus.Accepted, null, reviewedByAccountId, reviewedAt);
     }
 
     public DomainResult Reject(EvidenceRejection? rejection)
@@ -114,7 +127,7 @@ public sealed class EvidenceItem
                 new("evidence.rejection_reason.too_long", "A rejection reason cannot exceed 1000 characters."));
         }
 
-        return Review(EvidenceStatus.Rejected, normalisedReason, rejection.ReviewedAt);
+        return Review(EvidenceStatus.Rejected, normalisedReason, rejection.ReviewedByAccountId, rejection.ReviewedAt);
     }
 
     public DomainResult Expire(DateTimeOffset changedAt)
@@ -151,8 +164,10 @@ public sealed class EvidenceItem
         return DomainResult.Success();
     }
 
-    private DomainResult Review(EvidenceStatus status, string? rejectionReason, DateTimeOffset reviewedAt)
+    private DomainResult Review(EvidenceStatus status, string? rejectionReason, UserAccountId reviewedByAccountId, DateTimeOffset reviewedAt)
     {
+        if (reviewedByAccountId.Value == Guid.Empty)
+            return DomainResult.Failure(new("evidence.reviewer.required", "A valid staff reviewer is required."));
         var validTime = EnsureUtc(reviewedAt);
         if (!validTime.IsSuccess) return validTime;
         if (reviewedAt < StatusChangedAt) return DomainResult.Failure(new("evidence.timestamp.out_of_order", "Evidence history cannot move backwards."));
@@ -165,6 +180,7 @@ public sealed class EvidenceItem
 
         Status = status;
         RejectionReason = rejectionReason;
+        ReviewedByAccountId = reviewedByAccountId;
         ReviewedAt = reviewedAt;
         StatusChangedAt = reviewedAt;
         return DomainResult.Success();

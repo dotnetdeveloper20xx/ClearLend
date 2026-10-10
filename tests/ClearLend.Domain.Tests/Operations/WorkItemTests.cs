@@ -36,4 +36,20 @@ public sealed class WorkItemTests
         Assert.False(result.IsSuccess);
         Assert.Equal("work_item.complete.invalid_status", result.Error?.Code);
     }
+
+    [Fact]
+    public void WaitingForInformationPreservesOwnerAndCanResume()
+    {
+        var item = TestResult.Get(WorkItem.Open(WorkItemType.Vetting, "vetting-case-1", WorkItemPriority.Normal, At));
+        var owner = StaffMemberId.New();
+        Assert.True(item.AssignTo(owner, At.AddMinutes(1)).IsSuccess);
+
+        Assert.True(item.WaitForInformation(At.AddMinutes(2)).IsSuccess);
+        Assert.Equal(WorkItemStatus.WaitingForInformation, item.Status);
+        Assert.Equal(owner, item.AssignedTo);
+
+        Assert.True(item.ResumeAfterInformation(At.AddMinutes(3)).IsSuccess);
+        Assert.Equal(WorkItemStatus.InProgress, item.Status);
+        Assert.Equal(owner, item.AssignedTo);
+    }
 }
