@@ -1,5 +1,6 @@
 using ClearLend.Domain.Borrowers;
 using ClearLend.Domain.Identity;
+using ClearLend.Domain.Lenders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using ClearLend.Infrastructure.Identity;
@@ -10,6 +11,7 @@ public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> opti
 {
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<BorrowerProfile> BorrowerProfiles => Set<BorrowerProfile>();
+    public DbSet<LenderProfile> LenderProfiles => Set<LenderProfile>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -48,6 +50,31 @@ public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> opti
                 consent.Property(x => x.RecordedAt);
             });
             entity.Ignore(x => x.ConsentHistory);
+        });
+
+        builder.Entity<LenderProfile>(entity =>
+        {
+            entity.ToTable("LenderProfiles");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasConversion(x => x.Value, value => LenderProfileId.From(value));
+            entity.Property(x => x.UserAccountId).HasConversion(x => x.Value, value => UserAccountId.From(value).Value);
+            entity.Property(x => x.State).HasConversion<string>();
+            entity.Property(x => x.LegalBusinessName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.TradingName).HasMaxLength(200);
+            entity.Property(x => x.BusinessRegistrationNumber).HasMaxLength(100);
+            entity.HasIndex(x => x.UserAccountId).IsUnique();
+            entity.OwnsOne(x => x.PrimaryContact, contact =>
+            {
+                contact.Property(x => x!.GivenName).HasColumnName("ContactGivenName");
+                contact.Property(x => x!.FamilyName).HasColumnName("ContactFamilyName");
+            });
+            entity.OwnsOne(x => x.LatestConsent, consent =>
+            {
+                consent.Property(x => x.Id).HasColumnName("ConsentId");
+                consent.Property(x => x.Status).HasConversion<string>();
+                consent.Property(x => x.PolicyVersion).HasMaxLength(100);
+                consent.Property(x => x.RecordedAt);
+            });
         });
     }
 }

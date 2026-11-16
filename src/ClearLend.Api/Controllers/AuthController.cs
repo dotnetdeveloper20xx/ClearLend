@@ -19,6 +19,6 @@ public sealed class AuthController(ISender sender) : ControllerBase
             return Unauthorized(new { code = result.Error!.Code, message = result.Error.Message });
 
         var login = result.Value!;
-        return Ok(new LoginResponse(login.AccessToken, login.ExpiresInSeconds));
+        return Ok(new LoginResponse(login.AccessToken, login.ExpiresInSeconds, login.AccountType));
     }
 }

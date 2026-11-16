@@ -45,6 +45,20 @@ namespace ClearLend.Infrastructure.Persistence.Migrations
                     b.ToTable("BorrowerProfiles", (string)null);
                 });
 
+            modelBuilder.Entity("ClearLend.Domain.Lenders.LenderProfile", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uniqueidentifier");
+                    b.Property<DateTimeOffset>("CreatedAt").HasColumnType("datetimeoffset");
+                    b.Property<string>("BusinessRegistrationNumber").HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.Property<string>("LegalBusinessName").IsRequired().HasMaxLength(200).HasColumnType("nvarchar(200)");
+                    b.Property<string>("TradingName").HasMaxLength(200).HasColumnType("nvarchar(200)");
+                    b.Property<string>("State").IsRequired().HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("UserAccountId").HasColumnType("uniqueidentifier");
+                    b.HasKey("Id");
+                    b.HasIndex("UserAccountId").IsUnique();
+                    b.ToTable("LenderProfiles", (string)null);
+                });
+
             modelBuilder.Entity("ClearLend.Domain.Identity.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -332,6 +346,32 @@ namespace ClearLend.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Name");
+                });
+
+            modelBuilder.Entity("ClearLend.Domain.Lenders.LenderProfile", b =>
+                {
+                    b.OwnsOne("ClearLend.Domain.Borrowers.ConsentRecord", "LatestConsent", b1 =>
+                        {
+                            b1.Property<Guid>("LenderProfileId").HasColumnType("uniqueidentifier");
+                            b1.Property<Guid>("Id").HasColumnType("uniqueidentifier").HasColumnName("ConsentId");
+                            b1.Property<string>("PolicyVersion").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                            b1.Property<DateTimeOffset>("RecordedAt").HasColumnType("datetimeoffset");
+                            b1.Property<string>("Status").IsRequired().HasColumnType("nvarchar(max)");
+                            b1.HasKey("LenderProfileId");
+                            b1.ToTable("LenderProfiles");
+                            b1.WithOwner().HasForeignKey("LenderProfileId");
+                        });
+                    b.OwnsOne("ClearLend.Domain.Borrowers.PersonalName", "PrimaryContact", b1 =>
+                        {
+                            b1.Property<Guid>("LenderProfileId").HasColumnType("uniqueidentifier");
+                            b1.Property<string>("FamilyName").IsRequired().HasColumnType("nvarchar(max)").HasColumnName("ContactFamilyName");
+                            b1.Property<string>("GivenName").IsRequired().HasColumnType("nvarchar(max)").HasColumnName("ContactGivenName");
+                            b1.HasKey("LenderProfileId");
+                            b1.ToTable("LenderProfiles");
+                            b1.WithOwner().HasForeignKey("LenderProfileId");
+                        });
+                    b.Navigation("LatestConsent").IsRequired();
+                    b.Navigation("PrimaryContact").IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

@@ -8,7 +8,7 @@ public sealed class RegisterBorrowerCommandValidator : AbstractValidator<Registe
     public RegisterBorrowerCommandValidator()
     {
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(320);
-        RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
+        RuleFor(x => x.Password).NotEmpty().MinimumLength(4);
         RuleFor(x => x.GivenName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.FamilyName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ConsentPolicyVersion).NotEmpty().MaximumLength(100);
