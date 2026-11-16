@@ -21,7 +21,7 @@ public sealed class MediatorPipelineTests
         await using var provider = services.BuildServiceProvider();
         var mediator = provider.GetRequiredService<ISender>();
 
-        var result = await mediator.Send(new RegisterBorrowerCommand("", "invalid", "", "", ConsentStatus.Granted, ""));
+        var result = await mediator.Send(new RegisterBorrowerCommand("invalid", "", "", ConsentStatus.Granted, ""));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("validation.failed", result.Error?.Code);
@@ -33,10 +33,12 @@ public sealed class MediatorPipelineTests
         public List<UserAccount> Items { get; } = [];
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> ExistsByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(false);
+        public Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult<UserAccount?>(null);
         public Task AddAsync(UserAccount account, CancellationToken cancellationToken) { Items.Add(account); return Task.CompletedTask; }
     }
     private sealed class Profiles : IBorrowerProfileRepository
     {
+        public Task<BorrowerProfile?> GetByUserAccountIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) => Task.FromResult<BorrowerProfile?>(null);
         public Task AddAsync(BorrowerProfile profile, CancellationToken cancellationToken) => Task.CompletedTask;
     }
     private sealed class UnitOfWork : IUnitOfWork

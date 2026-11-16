@@ -119,7 +119,7 @@ After receiving an answer:
 
 ## Non-negotiable engineering rules
 
-- Target the versions stated by the project pages, currently .NET 10, C# 14, Angular 21, EF Core 10, and SQL Server, unless repository evidence or the junior explicitly approves a change.
+- Target the versions stated by the project pages, currently .NET 10, C# 14, Angular 22, EF Core 10, and SQL Server, unless repository evidence or the junior explicitly approves a change.
 - Begin as a modular monolith. Do not introduce microservices, distributed transactions, a message broker, event sourcing, or separate databases without measured evidence and an approved decision.
 - Dependency direction points inward: Domain has no ClearLend project dependency; Application depends on Domain; Infrastructure implements Application ports; Contracts exposes transport types; API composes the system.
 - Organize use cases by feature or vertical slice. Avoid giant services and generic repositories that expose arbitrary CRUD.

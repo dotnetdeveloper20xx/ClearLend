@@ -4,12 +4,19 @@
     <ProjectReference Include="..\ClearLend.Application\ClearLend.Application.csproj" />
     <ProjectReference Include="..\ClearLend.Infrastructure\ClearLend.Infrastructure.csproj" />
     <ProjectReference Include="..\ClearLend.Contracts\ClearLend.Contracts.csproj" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Development exception approved by Faz Ahmed: Swagger dependency audit is tracked while upstream remediation is pending. -->
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
   </PropertyGroup>
 
 </Project>

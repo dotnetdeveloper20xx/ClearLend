@@ -1,0 +1,43 @@
+services:
+  clearlend-api:
+    build:
+      context: .
+      dockerfile: src/ClearLend.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ClearLend: Server=clearlend-sql;Database=ClearLend;User Id=sa;Password=${CLEARLEND_SQL_PASSWORD:-ClearLend_dev_password_ChangeMe1!};TrustServerCertificate=True;MultipleActiveResultSets=True
+    ports:
+      - "8080:8080"
+    depends_on:
+      clearlend-sql:
+        condition: service_healthy
+
+  clearlend-web:
+    build:
+      context: src/ClearLend.Web
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - clearlend-api
+
+  clearlend-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${CLEARLEND_SQL_PASSWORD:-ClearLend_dev_password_ChangeMe1!}
+    ports:
+      - "1433:1433"
+    volumes:
+      - clearlend-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  clearlend-sql-data:

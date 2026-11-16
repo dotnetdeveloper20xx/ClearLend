@@ -3,12 +3,21 @@
   <ItemGroup>
     <ProjectReference Include="..\ClearLend.Application\ClearLend.Application.csproj" />
     <ProjectReference Include="..\ClearLend.Domain\ClearLend.Domain.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Development exception approved by Faz Ahmed: keep latest SQL Server provider while upstream NuGet audit remediation is pending. -->
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
   </PropertyGroup>
 
 </Project>

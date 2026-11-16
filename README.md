@@ -146,7 +146,7 @@ Later capabilities will model settlement, reconciliation, payment allocation, fe
 | Web API | ASP.NET Core |
 | Identity | ASP.NET Core Identity at the application boundary |
 | Persistence | EF Core 10 and SQL Server |
-| Frontend | Angular 21 |
+| Frontend | Angular 22.2.6 |
 | Architecture | Modular monolith with inward dependencies |
 | Testing | Unit, architecture, integration, API, and browser journey tests |
 | Operations | Health checks, structured logs, traces, metrics, audit, and outbox evidence |

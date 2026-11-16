@@ -4,6 +4,9 @@ namespace ClearLend.Domain.Identity;
 
 public sealed class UserAccount
 {
+    // EF Core materializes the aggregate through this constructor; application code uses Register.
+    private UserAccount() { }
+
     private UserAccount(
         UserAccountId id,
         IdentityProviderSubject identityProviderSubject,
@@ -20,9 +23,9 @@ public sealed class UserAccount
 
     public UserAccountId Id { get; }
 
-    public IdentityProviderSubject IdentityProviderSubject { get; }
+    public IdentityProviderSubject IdentityProviderSubject { get; } = null!;
 
-    public EmailAddress EmailAddress { get; private set; }
+    public EmailAddress EmailAddress { get; private set; } = null!;
 
     public AccountStatus Status { get; private set; }
 

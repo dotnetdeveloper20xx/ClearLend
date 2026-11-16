@@ -85,7 +85,7 @@ public sealed class RegisterBorrowerHandlerTests
         ConsentStatus consentStatus = ConsentStatus.Granted,
         string email = "aisha@example.com",
         string policyVersion = "v1") =>
-        new("auth0|aisha-123", email, "Aisha", "Khan", consentStatus, policyVersion);
+        new(email, "Aisha", "Khan", consentStatus, policyVersion);
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
@@ -97,12 +97,14 @@ public sealed class RegisterBorrowerHandlerTests
         public List<UserAccount> Items { get; } = [];
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken) => Task.FromResult(Items.Any(x => x.EmailAddress.Value == email));
         public Task<bool> ExistsByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(Items.Any(x => x.IdentityProviderSubject.Value == subject));
+        public Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(Items.SingleOrDefault(x => x.IdentityProviderSubject.Value == subject));
         public Task AddAsync(UserAccount account, CancellationToken cancellationToken) { Items.Add(account); return Task.CompletedTask; }
     }
 
     private sealed class BorrowerProfileRepositorySpy : IBorrowerProfileRepository
     {
         public List<BorrowerProfile> Items { get; } = [];
+        public Task<BorrowerProfile?> GetByUserAccountIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) => Task.FromResult(Items.SingleOrDefault(x => x.UserAccountId == userAccountId));
         public Task AddAsync(BorrowerProfile profile, CancellationToken cancellationToken) { Items.Add(profile); return Task.CompletedTask; }
     }
 

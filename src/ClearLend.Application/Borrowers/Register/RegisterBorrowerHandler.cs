@@ -29,7 +29,7 @@ public sealed class RegisterBorrowerHandler : IRequestHandler<RegisterBorrowerCo
         RegisterBorrowerCommand command,
         CancellationToken cancellationToken)
     {
-        var subject = IdentityProviderSubject.Create(command.IdentityProviderSubject);
+        var subject = IdentityProviderSubject.Create($"development|{Guid.NewGuid():N}");
         if (!subject.TryGetValue(out var identitySubject)) return Failure(subject);
 
         var email = EmailAddress.Create(command.Email);
@@ -61,7 +61,7 @@ public sealed class RegisterBorrowerHandler : IRequestHandler<RegisterBorrowerCo
         await borrowerProfiles.AddAsync(borrowerProfile, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return DomainResults.Success(new RegisterBorrowerResult(borrowerProfile.Id, borrowerProfile.State));
+        return DomainResults.Success(new RegisterBorrowerResult(userAccount.Id, borrowerProfile.Id, borrowerProfile.State));
     }
 
     private static DomainResult<RegisterBorrowerResult> Failure<T>(DomainResult<T> result) =>

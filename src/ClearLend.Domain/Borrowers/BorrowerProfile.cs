@@ -6,6 +6,9 @@ namespace ClearLend.Domain.Borrowers;
 
 public sealed class BorrowerProfile
 {
+    // EF Core materializes the aggregate through this constructor; application code uses Create.
+    private BorrowerProfile() { }
+
     private BorrowerProfile(
         BorrowerProfileId id,
         UserAccountId userAccountId,
@@ -33,7 +36,7 @@ public sealed class BorrowerProfile
 
     public DateTimeOffset StateChangedAt { get; private set; }
 
-    public ConsentRecord LatestConsent { get; private set; }
+    public ConsentRecord LatestConsent { get; private set; } = null!;
 
     public IReadOnlyList<ConsentRecord> ConsentHistory => consentHistory.AsReadOnly();
 
