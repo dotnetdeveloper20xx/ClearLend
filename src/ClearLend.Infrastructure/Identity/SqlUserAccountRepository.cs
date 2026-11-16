@@ -24,5 +24,6 @@ public sealed class SqlUserAccountRepository(ClearLendDbContext db) : IUserAccou
         var identitySubject = IdentityProviderSubject.Create(subject).Value!;
         return db.UserAccounts.SingleOrDefaultAsync(x => x.IdentityProviderSubject == identitySubject, cancellationToken);
     }
+    public Task<UserAccount?> GetByIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) => db.UserAccounts.SingleOrDefaultAsync(x => x.Id == userAccountId, cancellationToken);
     public Task AddAsync(UserAccount account, CancellationToken cancellationToken) { db.UserAccounts.Add(account); return Task.CompletedTask; }
 }

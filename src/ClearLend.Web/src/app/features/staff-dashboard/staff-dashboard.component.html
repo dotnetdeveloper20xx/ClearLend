@@ -1,0 +1,42 @@
+<section class="staff-layout">
+  <p class="eyebrow">Administration</p>
+  <h1>Staff management</h1>
+  <p class="lead">Manage the people who operate ClearLend and the roles assigned to them.</p>
+
+  <mat-card class="create-card">
+    <mat-card-header>
+      <mat-card-title>Add staff member</mat-card-title>
+      <mat-card-subtitle>The account is created by an Application Owner; no invitation is sent.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="create()">
+        <label>Email<input type="email" formControlName="email" autocomplete="off"></label>
+        <label>Temporary password<input type="password" formControlName="password" autocomplete="new-password"></label>
+        <fieldset>
+          <legend>Roles</legend>
+          @for (role of roles; track role) {
+            <label class="role-option"><input type="checkbox" [checked]="form.controls.roles.value.includes(role)" (change)="toggleRole(role)">{{ role }}</label>
+          }
+        </fieldset>
+        <button type="submit" [disabled]="saving()">{{ saving() ? 'Creating…' : 'Create staff account' }}</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (success()) { <p class="success" role="status">{{ success() }}</p> }
+  @if (error()) { <mat-card><mat-card-content><p class="error" role="alert">{{ error() }}</p></mat-card-content></mat-card> }
+  @if (loading()) {
+    <div class="loading"><mat-spinner diameter="40" aria-label="Loading staff"></mat-spinner><p>Loading staff records…</p></div>
+  } @else if (staff().length === 0) {
+    <mat-card><mat-card-content><h2>No staff members yet</h2><p>Add the first Operations Staff or Credit Manager account to begin.</p></mat-card-content></mat-card>
+  } @else {
+    <div class="staff-grid">
+      @for (member of staff(); track member.userAccountId) {
+        <mat-card class="staff-card">
+          <mat-card-header><div class="avatar" aria-hidden="true">{{ member.email.charAt(0).toUpperCase() }}</div><div><mat-card-title>{{ member.email }}</mat-card-title><mat-card-subtitle>{{ member.status }}</mat-card-subtitle></div></mat-card-header>
+          <mat-card-content><div class="roles">@for (role of member.roles; track role) { <span>{{ role }}</span> }</div><p class="created">Created {{ member.createdAt | date:'mediumDate' }}</p><div class="staff-actions"><button type="button" class="status-button" (click)="changeStatus(member)">{{ member.status === 'Active' ? 'Suspend access' : 'Restore access' }}</button><button type="button" class="status-button" (click)="resetPassword(member)">Reset password</button><button type="button" class="status-button" (click)="changeRoles(member)">Change roles</button><button type="button" class="danger-button" (click)="remove(member)" [disabled]="member.status === 'Removed'">Remove access</button></div></mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</section>

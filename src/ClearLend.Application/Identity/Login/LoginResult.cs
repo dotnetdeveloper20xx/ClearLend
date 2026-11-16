@@ -1,3 +1,3 @@
 namespace ClearLend.Application.Identity.Login;
 
-public sealed record LoginResult(string AccessToken, int ExpiresInSeconds, string AccountType);
+public sealed record LoginResult(string AccessToken, int ExpiresInSeconds, string AccountType, bool MustChangePassword);

@@ -34,7 +34,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: response => void this.router.navigate([response.accountType === 'Lender' ? '/lender/profile' : '/profile']),
+      next: response => void this.router.navigate([response.mustChangePassword ? '/change-password' : response.accountType === 'Lender' ? '/lender' : response.accountType === 'Staff' ? '/staff' : '/borrower']),
       error: () => {
         this.error.set('The email or password was not recognised.');
         this.loading.set(false);

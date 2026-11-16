@@ -5,6 +5,7 @@ using ClearLend.Domain.Borrowers;
 using ClearLend.Domain.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace ClearLend.Application.Tests.Borrowers;
 
@@ -14,8 +15,10 @@ public sealed class MediatorPipelineTests
     public async Task ValidationPipelineRejectsInvalidCommandBeforeHandler()
     {
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddClearLendApplication();
-        services.AddSingleton<IUserAccountRepository, Accounts>();
+        services.AddSingleton<Accounts>();
+        services.AddSingleton<IUserAccountRepository>(sp => sp.GetRequiredService<Accounts>());
         services.AddSingleton<IBorrowerProfileRepository, Profiles>();
         services.AddSingleton<IUnitOfWork, UnitOfWork>();
         await using var provider = services.BuildServiceProvider();
@@ -34,6 +37,7 @@ public sealed class MediatorPipelineTests
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> ExistsByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult<UserAccount?>(null);
+        public Task<UserAccount?> GetByIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) => Task.FromResult<UserAccount?>(null);
         public Task AddAsync(UserAccount account, CancellationToken cancellationToken) { Items.Add(account); return Task.CompletedTask; }
     }
     private sealed class Profiles : IBorrowerProfileRepository

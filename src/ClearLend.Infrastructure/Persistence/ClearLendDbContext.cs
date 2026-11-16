@@ -1,6 +1,8 @@
 using ClearLend.Domain.Borrowers;
 using ClearLend.Domain.Identity;
 using ClearLend.Domain.Lenders;
+using ClearLend.Domain.Staff;
+using ClearLend.Domain.Audit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using ClearLend.Infrastructure.Identity;
@@ -12,6 +14,8 @@ public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> opti
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<BorrowerProfile> BorrowerProfiles => Set<BorrowerProfile>();
     public DbSet<LenderProfile> LenderProfiles => Set<LenderProfile>();
+    public DbSet<StaffMembership> StaffMemberships => Set<StaffMembership>();
+    public DbSet<AuditRecord> AuditRecords => Set<AuditRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -75,6 +79,26 @@ public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> opti
                 consent.Property(x => x.PolicyVersion).HasMaxLength(100);
                 consent.Property(x => x.RecordedAt);
             });
+        });
+
+        builder.Entity<StaffMembership>(entity =>
+        {
+            entity.ToTable("StaffMemberships");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasConversion(x => x.Value, value => StaffMembershipId.From(value).Value);
+            entity.Property(x => x.UserAccountId).HasConversion(x => x.Value, value => UserAccountId.From(value).Value);
+            entity.Property(x => x.Role).HasConversion<string>();
+            entity.Property(x => x.State).HasConversion<string>();
+            entity.HasIndex(x => new { x.UserAccountId, x.Role }).IsUnique();
+        });
+
+        builder.Entity<AuditRecord>(entity =>
+        {
+            entity.ToTable("AuditRecords");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ActorSubject).HasMaxLength(450).IsRequired();
+            entity.Property(x => x.Action).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.TargetId).HasMaxLength(450).IsRequired();
         });
     }
 }

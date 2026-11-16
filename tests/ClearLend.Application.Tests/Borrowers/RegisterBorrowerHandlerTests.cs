@@ -89,7 +89,7 @@ public sealed class RegisterBorrowerHandlerTests
 
     private sealed class IdentityAccountServiceSpy : IIdentityAccountService
     {
-        public Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken) =>
+        public Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken, bool mustChangePassword = false) =>
             Task.FromResult(IdentityAccountCreationResult.Success($"identity|{Guid.NewGuid():N}"));
     }
 
@@ -104,6 +104,7 @@ public sealed class RegisterBorrowerHandlerTests
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken) => Task.FromResult(Items.Any(x => x.EmailAddress.Value == email));
         public Task<bool> ExistsByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(Items.Any(x => x.IdentityProviderSubject.Value == subject));
         public Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(Items.SingleOrDefault(x => x.IdentityProviderSubject.Value == subject));
+        public Task<UserAccount?> GetByIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) => Task.FromResult(Items.SingleOrDefault(x => x.Id == userAccountId));
         public Task AddAsync(UserAccount account, CancellationToken cancellationToken) { Items.Add(account); return Task.CompletedTask; }
     }
 

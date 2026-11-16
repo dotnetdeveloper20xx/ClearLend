@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Security.Claims;
 using ClearLend.Infrastructure.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -55,7 +56,7 @@ public sealed class JwtAccessTokenIssuerTests
 
         var principal = new JwtSecurityTokenHandler().ValidateToken(token.RawData, parameters, out _);
 
-        Assert.Equal(Subject, principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
+        Assert.Equal(Subject, principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
     }
 
     private static JwtAccessTokenIssuer CreateIssuer() =>

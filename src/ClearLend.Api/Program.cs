@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using ClearLend.Infrastructure.Staff;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,8 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ClearLendDbContext>();
     db.Database.Migrate();
+    await scope.ServiceProvider.GetRequiredService<ApplicationOwnerSeeder>().SeedAsync();
+    await scope.ServiceProvider.GetRequiredService<DevelopmentDemoAccountSeeder>().SeedAsync();
 }
 
 app.UseSwagger();

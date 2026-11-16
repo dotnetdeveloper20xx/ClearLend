@@ -63,6 +63,7 @@ public sealed class GetMyBorrowerProfileHandlerTests
         public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<bool> ExistsByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) => Task.FromResult(accounts.SingleOrDefault(x => x.IdentityProviderSubject.Value == subject));
+        public Task<UserAccount?> GetByIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) => Task.FromResult(accounts.SingleOrDefault(x => x.Id == userAccountId));
         public Task AddAsync(UserAccount account, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 

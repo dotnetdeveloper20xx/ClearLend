@@ -1,1 +1,35 @@
-import{Component,inject,signal}from'@angular/core';import{ApiService}from'../../core/api/api.service';@Component({selector:'app-lender-profile',standalone:true,template:`<h1>Business lender profile</h1>@if(profile();as p){<h2>{{p.legalBusinessName}}</h2><p>{{p.email}}</p><p>Contact: {{p.contactGivenName}} {{p.contactFamilyName}}</p><p>Status: {{p.profileState}}</p>}@else if(error()){<p>{{error()}}</p>}`})export class LenderProfileComponent{private readonly api=inject(ApiService);readonly profile=signal<any>(null);readonly error=signal('Loading lender profile…');constructor(){this.api.getMyLenderProfile().subscribe({next:p=>{this.profile.set(p);this.error.set('')},error:e=>this.error.set(e.error?.message??`Profile failed (HTTP ${e.status}).`)})}}
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ApiService } from '../../core/api/api.service';
+import { LenderProfile } from '../../core/api/api.models';
+
+@Component({
+  selector: 'app-lender-profile',
+  standalone: true,
+  imports: [DatePipe, MatCardModule, MatProgressSpinnerModule],
+  templateUrl: './lender-profile.component.html',
+  styleUrl: './lender-profile.component.scss'
+})
+export class LenderProfileComponent {
+  private readonly api = inject(ApiService);
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly profile = signal<LenderProfile | null>(null);
+
+  constructor() {
+    this.api.getMyLenderProfile().subscribe({
+      next: profile => {
+        this.profile.set(profile);
+        this.loading.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        const apiMessage = error.error?.message;
+        this.error.set(apiMessage ? `${apiMessage} (HTTP ${error.status})` : `We could not load your lender profile (HTTP ${error.status}).`);
+        this.loading.set(false);
+      }
+    });
+  }
+}

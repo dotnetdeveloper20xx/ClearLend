@@ -5,9 +5,9 @@ namespace ClearLend.Infrastructure.Identity;
 
 public sealed class AspNetIdentityAccountService(UserManager<ClearLendIdentityUser> userManager) : IIdentityAccountService
 {
-    public async Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken)
+    public async Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken, bool mustChangePassword = false)
     {
-        var user = new ClearLendIdentityUser { UserName = email, Email = email };
+        var user = new ClearLendIdentityUser { UserName = email, Email = email, MustChangePassword = mustChangePassword };
         var result = await userManager.CreateAsync(user, password);
         if (result.Succeeded)
             return IdentityAccountCreationResult.Success(user.Id);

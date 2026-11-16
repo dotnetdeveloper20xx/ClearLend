@@ -7,5 +7,6 @@ public interface IUserAccountRepository
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken);
     Task<bool> ExistsByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken);
     Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken);
+    Task<UserAccount?> GetByIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken);
     Task AddAsync(UserAccount account, CancellationToken cancellationToken);
 }

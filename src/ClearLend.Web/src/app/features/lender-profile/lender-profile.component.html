@@ -1,0 +1,28 @@
+<section class="profile-layout">
+  <p class="eyebrow">My lender profile</p>
+  <h1>Your ClearLend profile</h1>
+  <p class="lead">Review the business information connected to your lender account.</p>
+
+  @if (loading()) {
+    <div class="loading-state"><mat-spinner diameter="40" aria-label="Loading lender profile"></mat-spinner><p>Loading your profile…</p></div>
+  } @else if (error()) {
+    <mat-card><mat-card-content><p class="error" role="alert">{{ error() }}</p></mat-card-content></mat-card>
+  } @else if (profile(); as lender) {
+    <mat-card class="profile-card">
+      <mat-card-header>
+        <div class="profile-badge" aria-hidden="true">{{ lender.legalBusinessName.charAt(0) }}</div>
+        <div><mat-card-title>{{ lender.legalBusinessName }}</mat-card-title><mat-card-subtitle>{{ lender.email }}</mat-card-subtitle></div>
+      </mat-card-header>
+      <mat-card-content>
+        <dl>
+          <dt>Trading name</dt><dd>{{ lender.tradingName || 'Not provided' }}</dd>
+          <dt>Primary contact</dt><dd>{{ lender.contactGivenName }} {{ lender.contactFamilyName }}</dd>
+          <dt>Account status</dt><dd>{{ lender.accountStatus }}</dd>
+          <dt>Lender profile status</dt><dd>{{ lender.profileState }}</dd>
+          <dt>Terms consent</dt><dd>{{ lender.consentStatus }}</dd>
+          <dt>Registered</dt><dd>{{ lender.registrationDate | date:'mediumDate' }}</dd>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+  }
+</section>

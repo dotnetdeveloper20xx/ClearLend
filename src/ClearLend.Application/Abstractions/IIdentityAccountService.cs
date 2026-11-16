@@ -2,7 +2,7 @@ namespace ClearLend.Application.Abstractions;
 
 public interface IIdentityAccountService
 {
-    Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken);
+    Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken, bool mustChangePassword = false);
 }
 
 public sealed record IdentityAccountCreationResult(bool Succeeded, string? Subject, string? ErrorCode, string? ErrorMessage)

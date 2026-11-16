@@ -61,6 +61,8 @@ public sealed class RegisterUserHandlerTests
             Task.FromResult(Items.Any(x => x.IdentityProviderSubject.Value == subject));
         public Task<UserAccount?> GetByIdentityProviderSubjectAsync(string subject, CancellationToken cancellationToken) =>
             Task.FromResult(Items.SingleOrDefault(x => x.IdentityProviderSubject.Value == subject));
+        public Task<UserAccount?> GetByIdAsync(UserAccountId userAccountId, CancellationToken cancellationToken) =>
+            Task.FromResult(Items.SingleOrDefault(x => x.Id == userAccountId));
 
         public Task AddAsync(UserAccount account, CancellationToken cancellationToken)
         {

@@ -4,4 +4,5 @@ namespace ClearLend.Infrastructure.Identity;
 
 public sealed class ClearLendIdentityUser : IdentityUser
 {
+    public bool MustChangePassword { get; set; }
 }
