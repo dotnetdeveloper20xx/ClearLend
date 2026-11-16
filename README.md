@@ -41,6 +41,13 @@ Password registration, ASP.NET Core Identity, real login verification, JWT issua
 
 This is a working engineering checkpoint, not a production lending service.
 
+### Project progress records
+
+The product vision and reference diagrams remain in this README. The current implementation story is recorded separately:
+
+- [User progress — what works today and what is next](Scrum/Tasks/USER-PROGRESS-BORROWER-FOUNDATION.md)
+- [Project takeover and developer record — what we inherited, changed, and why](Scrum/Tasks/PROJECT-TAKEOVER-BORROWER-FOUNDATION.md)
+
 ## Solution structure
 
 ```text
