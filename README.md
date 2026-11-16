@@ -16,22 +16,30 @@ Borrowers should be able to register, complete vetting, find suitable products, 
 
 ![Business model and value exchange](project%20images/clearlend-business-model-value-exchange.png)
 
-## Current status
+## Current status — borrower foundation checkpoint
 
-The repository currently contains the runnable solution foundation and the first domain capability:
+This repository was taken over from an earlier team and is being rebuilt in small, demonstrable vertical slices. The current completed slice is the technical foundation for borrower onboarding:
 
-- .NET 10 solution using `ClearLend.slnx`.
-- Modular-monolith project structure.
-- Minimal ASP.NET Core API host.
-- Liveness and readiness health endpoints.
-- Domain-first `UserAccount` model.
-- Strongly typed account identifiers and identity-provider subjects.
-- Validated email value object.
-- Typed domain results and error codes for expected business failures.
-- Account lifecycle rules: pending, active, suspended, and closed.
-- Focused domain tests.
+- .NET 10 modular monolith using `ClearLend.slnx`.
+- Clean Architecture boundaries: Domain, Application, Infrastructure, Contracts, API, and tests.
+- Controller-based ASP.NET Core API with CQRS/MediatR commands, queries, and validators.
+- Swagger/OpenAPI documentation for the API.
+- SQL Server persistence through EF Core 10.
+- Local SQL Server database created from the initial EF Core migration.
+- User account and borrower profile persistence.
+- Angular 22 SPA with registration, login, and profile pages.
+- Docker files prepared for future container-based development.
+- Focused application and Angular tests/builds.
 
-The next business capability is participant onboarding: borrower and lender profiles, evidence collection, operational vetting, and accountable approval decisions.
+### What a user can do now
+
+The system can accept a person’s email, name, and consent information, create a user account and borrower profile, and save those records permanently in local SQL Server.
+
+### What is intentionally next
+
+Password registration, ASP.NET Core Identity, real login verification, JWT issuance, protected profile access, and end-to-end registration-to-profile testing are not yet complete. The broader lender, vetting, lending, payments, staff, and dashboard capabilities are also future slices.
+
+This is a working engineering checkpoint, not a production lending service.
 
 ## Solution structure
 
@@ -43,7 +51,8 @@ ClearLend.slnx
 │   ├── ClearLend.Application/             # Use cases and application ports
 │   ├── ClearLend.Infrastructure/          # Persistence and external adapters
 │   ├── ClearLend.Contracts/               # API request and response contracts
-│   └── ClearLend.Api/                     # ASP.NET Core composition root
+│   ├── ClearLend.Api/                     # ASP.NET Core controllers and composition root
+│   └── ClearLend.Web/                     # Angular 22 single-page application
 │
 ├── tests/
 │   ├── ClearLend.Domain.Tests/
@@ -155,9 +164,10 @@ Later capabilities will model settlement, reconciliation, payment allocation, fe
 
 ### Prerequisites
 
-- .NET SDK `10.0.400` or a compatible .NET 10 SDK.
+- .NET SDK `10.0.404` or a compatible .NET 10 SDK.
 - Visual Studio with .NET 10 support, or the .NET CLI.
-- SQL Server will be required when persistence and integration tests are introduced.
+- Local SQL Server Express using Windows Authentication, or the future Docker Compose SQL service.
+- Node.js 26.12.1 and npm 11.20.0 for the Angular application.
 
 The repository pins the expected SDK in [global.json](global.json).
 
@@ -177,28 +187,54 @@ dotnet test ClearLend.slnx --configuration Release
 dotnet run --project src/ClearLend.Api/ClearLend.Api.csproj
 ```
 
-The API currently exposes:
+The API exposes:
 
 ```text
-GET /                 Basic service response
-GET /health/live      Liveness check
-GET /health/ready     Readiness check
+GET  /                         Basic service response
+GET  /health/live              Liveness check
+GET  /health/ready             Readiness check
+POST /api/v1/users             Register a basic user record
+POST /api/v1/borrowers         Register a borrower profile
+POST /api/v1/auth/login        Login endpoint contract (Identity wiring next)
+GET  /api/v1/me/borrower-profile  Profile endpoint contract (JWT wiring next)
 ```
 
-The API is intentionally small at this stage. Business endpoints will be added only after their domain rules, ownership behavior, contracts, and tests are defined.
+Swagger UI is available at `/swagger` while the API is running.
+
+### Run the Angular application
+
+```powershell
+cd src/ClearLend.Web
+npm install
+npm start
+```
+
+Open `http://localhost:4200/`.
+
+### Apply the local database migration
+
+The initial migration is already committed. With the local SQL Server service running:
+
+```powershell
+dotnet ef database update `
+  --project src/ClearLend.Infrastructure/ClearLend.Infrastructure.csproj `
+  --configuration Debug
+```
 
 ## Delivery roadmap
 
 1. Establish the solution and architecture boundaries. **Complete**
-2. Model participant registration and onboarding. **Next**
-3. Add borrower and lender profiles.
-4. Add evidence collection and vetting decisions.
-5. Add lender product publication.
-6. Add borrower draft applications and submission.
-7. Add offers, commitments, and synthetic settlement.
-8. Add loan servicing, schedules, payments, reconciliation, and fees.
-9. Add support, compliance, notifications, reporting, and audit workflows.
-10. Add the Angular journeys, operational evidence, performance workload, and delivery automation.
+2. Build borrower persistence foundation. **Complete**
+3. Add ASP.NET Core Identity and secure borrower password registration. **Next**
+4. Add JWT login and protected borrower profile access.
+5. Add lender profiles.
+6. Add evidence collection and vetting decisions.
+7. Add lender product publication.
+8. Add borrower draft applications and submission.
+9. Add offers, commitments, and synthetic settlement.
+10. Add loan servicing, schedules, payments, reconciliation, and fees.
+11. Add support, compliance, notifications, reporting, and audit workflows.
+12. Add operational evidence, performance workload, and delivery automation.
 
 Roadmap status will only be marked complete when the relevant implementation, tests, documentation, and runtime evidence exist.
 
