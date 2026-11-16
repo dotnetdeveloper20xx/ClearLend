@@ -11,17 +11,20 @@ public sealed class RegisterBorrowerHandler : IRequestHandler<RegisterBorrowerCo
     private readonly IUserAccountRepository userAccounts;
     private readonly IBorrowerProfileRepository borrowerProfiles;
     private readonly IUnitOfWork unitOfWork;
+    private readonly IIdentityAccountService identityAccounts;
     private readonly TimeProvider clock;
 
     public RegisterBorrowerHandler(
         IUserAccountRepository userAccounts,
         IBorrowerProfileRepository borrowerProfiles,
         IUnitOfWork unitOfWork,
+        IIdentityAccountService identityAccounts,
         TimeProvider? clock = null)
     {
         this.userAccounts = userAccounts ?? throw new ArgumentNullException(nameof(userAccounts));
         this.borrowerProfiles = borrowerProfiles ?? throw new ArgumentNullException(nameof(borrowerProfiles));
         this.unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        this.identityAccounts = identityAccounts ?? throw new ArgumentNullException(nameof(identityAccounts));
         this.clock = clock ?? TimeProvider.System;
     }
 
@@ -29,17 +32,11 @@ public sealed class RegisterBorrowerHandler : IRequestHandler<RegisterBorrowerCo
         RegisterBorrowerCommand command,
         CancellationToken cancellationToken)
     {
-        var subject = IdentityProviderSubject.Create($"development|{Guid.NewGuid():N}");
-        if (!subject.TryGetValue(out var identitySubject)) return Failure(subject);
-
         var email = EmailAddress.Create(command.Email);
         if (!email.TryGetValue(out var emailAddress)) return Failure(email);
 
         if (await userAccounts.ExistsByEmailAsync(emailAddress.Value, cancellationToken))
             return DomainResults.Failure<RegisterBorrowerResult>(new("identity.email.already_registered", "The email address is already registered."));
-
-        if (await userAccounts.ExistsByIdentityProviderSubjectAsync(identitySubject.Value, cancellationToken))
-            return DomainResults.Failure<RegisterBorrowerResult>(new("identity.subject.already_registered", "The identity-provider subject is already registered."));
 
         var name = PersonalName.Create(command.GivenName, command.FamilyName);
         if (!name.TryGetValue(out var personalName)) return Failure(name);
@@ -47,6 +44,13 @@ public sealed class RegisterBorrowerHandler : IRequestHandler<RegisterBorrowerCo
         var registeredAt = clock.GetUtcNow();
         var consent = ConsentRecord.Record(command.ConsentStatus, command.ConsentPolicyVersion, registeredAt);
         if (!consent.TryGetValue(out var consentRecord)) return Failure(consent);
+
+        var identity = await identityAccounts.CreateAsync(emailAddress.Value, command.Password, cancellationToken);
+        if (!identity.Succeeded)
+            return DomainResults.Failure<RegisterBorrowerResult>(new(identity.ErrorCode!, identity.ErrorMessage!));
+
+        var subject = IdentityProviderSubject.Create(identity.Subject!);
+        if (!subject.TryGetValue(out var identitySubject)) return Failure(subject);
 
         var account = UserAccount.Register(new UserAccountRegistration(identitySubject, emailAddress, registeredAt));
         if (!account.TryGetValue(out var userAccount)) return Failure(account);

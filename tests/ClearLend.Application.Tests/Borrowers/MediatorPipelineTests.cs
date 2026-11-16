@@ -21,7 +21,7 @@ public sealed class MediatorPipelineTests
         await using var provider = services.BuildServiceProvider();
         var mediator = provider.GetRequiredService<ISender>();
 
-        var result = await mediator.Send(new RegisterBorrowerCommand("invalid", "", "", ConsentStatus.Granted, ""));
+        var result = await mediator.Send(new RegisterBorrowerCommand("invalid", "", "", "", ConsentStatus.Granted, ""));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("validation.failed", result.Error?.Code);

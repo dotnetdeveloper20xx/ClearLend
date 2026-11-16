@@ -79,13 +79,19 @@ public sealed class RegisterBorrowerHandlerTests
         UserAccountRepositorySpy accounts,
         BorrowerProfileRepositorySpy profiles,
         UnitOfWorkSpy unitOfWork) =>
-        new(accounts, profiles, unitOfWork, new FixedTimeProvider(RegisteredAt));
+        new(accounts, profiles, unitOfWork, new IdentityAccountServiceSpy(), new FixedTimeProvider(RegisteredAt));
 
     private static RegisterBorrowerCommand Command(
         ConsentStatus consentStatus = ConsentStatus.Granted,
         string email = "aisha@example.com",
         string policyVersion = "v1") =>
-        new(email, "Aisha", "Khan", consentStatus, policyVersion);
+        new(email, "Password1!", "Aisha", "Khan", consentStatus, policyVersion);
+
+    private sealed class IdentityAccountServiceSpy : IIdentityAccountService
+    {
+        public Task<IdentityAccountCreationResult> CreateAsync(string email, string password, CancellationToken cancellationToken) =>
+            Task.FromResult(IdentityAccountCreationResult.Success($"identity|{Guid.NewGuid():N}"));
+    }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {

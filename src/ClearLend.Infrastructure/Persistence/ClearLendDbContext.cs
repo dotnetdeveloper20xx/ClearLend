@@ -1,17 +1,21 @@
 using ClearLend.Domain.Borrowers;
 using ClearLend.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using ClearLend.Infrastructure.Identity;
 
 namespace ClearLend.Infrastructure.Persistence;
 
-public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> options) : DbContext(options)
+public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> options) : IdentityDbContext<ClearLendIdentityUser>(options)
 {
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<BorrowerProfile> BorrowerProfiles => Set<BorrowerProfile>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        modelBuilder.Entity<UserAccount>(entity =>
+        base.OnModelCreating(builder);
+
+        builder.Entity<UserAccount>(entity =>
         {
             entity.ToTable("UserAccounts");
             entity.HasKey(x => x.Id);
@@ -23,7 +27,7 @@ public sealed class ClearLendDbContext(DbContextOptions<ClearLendDbContext> opti
             entity.HasIndex(x => x.IdentityProviderSubject).IsUnique();
         });
 
-        modelBuilder.Entity<BorrowerProfile>(entity =>
+        builder.Entity<BorrowerProfile>(entity =>
         {
             entity.ToTable("BorrowerProfiles");
             entity.HasKey(x => x.Id);

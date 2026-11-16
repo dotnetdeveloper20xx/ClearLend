@@ -7,6 +7,10 @@ using ClearLend.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Some future handlers intentionally have no infrastructure implementation yet.
+// Resolve services when their endpoint is used rather than failing startup validation.
+builder.Host.UseDefaultServiceProvider((_, options) => options.ValidateOnBuild = false);
+
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -19,7 +19,7 @@ public sealed class BorrowersController(ISender sender) : ControllerBase
         if (!Enum.TryParse<ConsentStatus>(request.ConsentStatus, true, out var consentStatus))
             return BadRequest(new { code = "consent.status.invalid", message = "Consent status must be Granted or Declined." });
 
-        var result = await sender.Send(new RegisterBorrowerCommand(request.Email, request.GivenName,
+        var result = await sender.Send(new RegisterBorrowerCommand(request.Email, request.Password, request.GivenName,
             request.FamilyName, consentStatus, request.ConsentPolicyVersion), cancellationToken);
 
         if (!result.IsSuccess)
