@@ -5,7 +5,7 @@ Purpose: Record the business requirements and developer work completed after tak
 
 ## Business requirement
 
-A person must be able to become a borrower in ClearLend. The system should store the borrower information safely, and the borrower will later be able to create a password, log in, and view their own profile.
+A person must be able to become a borrower in ClearLend. The system should store the borrower information safely, and the borrower will then be able to log in and view their own profile once JWT authentication is connected.
 
 We are starting with this small working journey before building lending, credit, staff, vetting, or dashboard features.
 
@@ -23,7 +23,7 @@ We are starting with this small working journey before building lending, credit,
 - Use controllers for the API.
 - Use CQRS through MediatR for commands and queries.
 - Use SQL Server locally through EF Core.
-- Use ASP.NET Core Identity for password storage and account login in the next slice.
+- Use ASP.NET Core Identity for secure password storage and account login.
 - Use JWT for API authentication after Identity registration is complete.
 - Keep Angular as the single SPA, with only registration, login, and profile pages for now.
 - Keep future staff, vetting, work-item, and dashboard functionality out of the current working slice.
@@ -71,16 +71,22 @@ Windows Authentication
 ```
 
 - Migration `InitialCreate` was applied successfully.
+- Added ASP.NET Core Identity persistence with secure password hashing and duplicate-email handling.
+- Added migration `AddAspNetIdentity` and applied it to the local `ClearLend` database.
+- Borrower registration now accepts a password and creates the Identity account before linking the domain `UserAccount` to the Identity subject.
 
 ## Current result
 
 The repository now has a working foundation for storing users and borrower profiles in local SQL Server. The API is controller-based, follows the existing CQRS and Clean Architecture boundaries, and builds successfully.
 
+## Faz Ahmed journey status
+
+Faz can currently register as a borrower, including a password. The password is securely stored by ASP.NET Core Identity, while the borrower account and profile are stored in SQL Server.
+
+Faz cannot yet complete login or view a protected profile. JWT token issuance, JWT validation, authenticated ownership lookup, and the Angular-to-API login/profile connection remain to be implemented.
+
 ## Not yet completed
 
-- ASP.NET Core Identity user and password persistence.
-- Borrower password registration.
-- Real login verification.
 - JWT token creation and validation.
 - Authentication protection on the profile endpoint.
 - End-to-end registration, login, and profile integration tests.
