@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "ClearLend.Web": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\nodejs\\npm.cmd",
+      "commandLineArgs": "start -- --host 127.0.0.1 --port 4201",
+      "workingDirectory": "C:\\dev\\clearlend\\src\\ClearLend.Web",
+      "launchBrowser": true,
+      "launchUrl": "http://127.0.0.1:4201/",
+      "environmentVariables": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

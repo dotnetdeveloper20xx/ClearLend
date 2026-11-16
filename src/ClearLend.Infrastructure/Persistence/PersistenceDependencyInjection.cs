@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace ClearLend.Infrastructure.Persistence;
 
@@ -20,7 +21,10 @@ public static class PersistenceDependencyInjection
             options.User.RequireUniqueEmail = true)
             .AddEntityFrameworkStores<ClearLendDbContext>()
             .AddDefaultTokenProviders();
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddScoped<IIdentityAccountService, AspNetIdentityAccountService>();
+        services.AddScoped<IIdentityAuthenticator, AspNetIdentityAuthenticator>();
+        services.AddScoped<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddScoped<IUserAccountRepository, SqlUserAccountRepository>();
         services.AddScoped<IBorrowerProfileRepository, SqlBorrowerProfileRepository>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();

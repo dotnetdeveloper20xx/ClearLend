@@ -33,20 +33,15 @@ This repository was taken over from an earlier team and is being rebuilt in smal
 
 ### What a user can do now
 
-The system can accept a person’s email, name, and consent information, create a user account and borrower profile, and save those records permanently in local SQL Server.
+Faz Ahmed can register as a borrower, sign in with email and password, and view his borrower profile. The account, password, user account, and borrower profile are persisted in local SQL Server.
 
-### What is intentionally next
-
-Password registration, ASP.NET Core Identity, real login verification, JWT issuance, protected profile access, and end-to-end registration-to-profile testing are not yet complete. The broader lender, vetting, lending, payments, staff, and dashboard capabilities are also future slices.
+The broader lender, vetting, lending, payments, staff, and dashboard capabilities are future slices.
 
 This is a working engineering checkpoint, not a production lending service.
 
-### Project progress records
+### Project progress record
 
-The product vision and reference diagrams remain in this README. The current implementation story is recorded separately:
-
-- [User progress — what works today and what is next](Scrum/Tasks/USER-PROGRESS-BORROWER-FOUNDATION.md)
-- [Project takeover and developer record — what we inherited, changed, and why](Scrum/Tasks/PROJECT-TAKEOVER-BORROWER-FOUNDATION.md)
+The product vision and reference diagrams remain in this README. The current sprint outcome is recorded in [Sprint 1 — Basic borrower journey](Scrum/Tasks/SPRINT-01-BORROWER-JOURNEY.md).
 
 ## Solution structure
 
@@ -202,8 +197,8 @@ GET  /health/live              Liveness check
 GET  /health/ready             Readiness check
 POST /api/v1/users             Register a basic user record
 POST /api/v1/borrowers         Register a borrower profile
-POST /api/v1/auth/login        Login endpoint contract (Identity wiring next)
-GET  /api/v1/me/borrower-profile  Profile endpoint contract (JWT wiring next)
+POST /api/v1/auth/login        Login with email and password
+GET  /api/v1/me/borrower-profile  Return the authenticated borrower profile
 ```
 
 Swagger UI is available at `/swagger` while the API is running.
@@ -216,7 +211,19 @@ npm install
 npm start
 ```
 
-Open `http://localhost:4200/`.
+Open `http://127.0.0.1:4201/`.
+
+### Run API and Angular together in Visual Studio
+
+The solution includes the Angular workspace as `ClearLend.Web.csproj`. In Visual Studio:
+
+1. Right-click the solution and choose **Set Startup Projects**.
+2. Select **Multiple startup projects**.
+3. Set `ClearLend.Api` to **Start** using the `http` profile.
+4. Set `ClearLend.Web` to **Start**.
+5. Press **F5**.
+
+The API runs on `http://localhost:5014` and Angular runs on `http://127.0.0.1:4201/`. Angular forwards `/api` requests to the API through `proxy.conf.json`.
 
 ### Apply the local database migration
 
@@ -232,9 +239,9 @@ dotnet ef database update `
 
 1. Establish the solution and architecture boundaries. **Complete**
 2. Build borrower persistence foundation. **Complete**
-3. Add ASP.NET Core Identity and secure borrower password registration. **Next**
-4. Add JWT login and protected borrower profile access.
-5. Add lender profiles.
+3. Add ASP.NET Core Identity and secure borrower password registration. **Complete**
+4. Add JWT login and protected borrower profile access. **Complete**
+5. Add lender profiles. **Next**
 6. Add evidence collection and vetting decisions.
 7. Add lender product publication.
 8. Add borrower draft applications and submission.
@@ -257,7 +264,7 @@ The full collection is stored in [`project images`](project%20images/).
 
 ## Project guidance
 
-Current implementation requirements and progress are recorded in the [project takeover and developer record](Scrum/Tasks/PROJECT-TAKEOVER-BORROWER-FOUNDATION.md) and the [user progress record](Scrum/Tasks/USER-PROGRESS-BORROWER-FOUNDATION.md).
+Current implementation requirements and progress are recorded in the [Sprint 1 borrower journey record](Scrum/Tasks/SPRINT-01-BORROWER-JOURNEY.md).
 
 ## Disclaimer
 

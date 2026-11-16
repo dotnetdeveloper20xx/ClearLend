@@ -2,10 +2,12 @@ using ClearLend.Application.Borrowers.Profile;
 using ClearLend.Contracts.Borrowers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ClearLend.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/me")]
 public sealed class MeController(ISender sender) : ControllerBase
 {

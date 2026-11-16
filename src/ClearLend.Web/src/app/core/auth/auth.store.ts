@@ -4,9 +4,9 @@ type AuthState = { accessToken: string | null };
 
 export const AuthStore = signalStore(
   { providedIn: 'root' },
-  withState<AuthState>({ accessToken: null }),
+  withState<AuthState>({ accessToken: typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem('clearlend.accessToken') }),
   withMethods((store) => ({
-    setToken(accessToken: string): void { patchState(store, { accessToken }); },
-    clearToken(): void { patchState(store, { accessToken: null }); }
+    setToken(accessToken: string): void { sessionStorage.setItem('clearlend.accessToken', accessToken); patchState(store, { accessToken }); },
+    clearToken(): void { sessionStorage.removeItem('clearlend.accessToken'); patchState(store, { accessToken: null }); }
   }))
 );

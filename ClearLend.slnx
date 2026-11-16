@@ -5,6 +5,7 @@
     <Project Path="src/ClearLend.Contracts/ClearLend.Contracts.csproj" />
     <Project Path="src/ClearLend.Domain/ClearLend.Domain.csproj" />
     <Project Path="src/ClearLend.Infrastructure/ClearLend.Infrastructure.csproj" />
+    <Project Path="src/ClearLend.Web/ClearLend.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ClearLend.Api.IntegrationTests/ClearLend.Api.IntegrationTests.csproj" />
