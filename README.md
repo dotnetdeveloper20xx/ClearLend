@@ -257,7 +257,7 @@ The full collection is stored in [`project images`](project%20images/).
 
 ## Project guidance
 
-The detailed implementation and mentoring requirements are recorded in [CLEARLEND-JUNIOR-DEVELOPER-AI-BUILD-PROMPT.md](CLEARLEND-JUNIOR-DEVELOPER-AI-BUILD-PROMPT.md). That document defines the engineering rhythm, decision checkpoints, acceptance evidence, security rules, testing expectations, and later implementation phases.
+Current implementation requirements and progress are recorded in the [project takeover and developer record](Scrum/Tasks/PROJECT-TAKEOVER-BORROWER-FOUNDATION.md) and the [user progress record](Scrum/Tasks/USER-PROGRESS-BORROWER-FOUNDATION.md).
 
 ## Disclaimer
 
