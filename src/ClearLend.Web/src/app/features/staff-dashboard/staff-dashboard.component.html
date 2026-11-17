@@ -1,42 +1,56 @@
 <section class="staff-layout">
+  <div class="demo-banner">Demo workspace · Member actions are simulated locally for owner review</div>
   <p class="eyebrow">Administration</p>
   <h1>Staff management</h1>
-  <p class="lead">Manage the people who operate ClearLend and the roles assigned to them.</p>
+  <p class="lead">A scalable operations view for managing staff access, roles, and account status.</p>
 
-  <mat-card class="create-card">
-    <mat-card-header>
-      <mat-card-title>Add staff member</mat-card-title>
-      <mat-card-subtitle>The account is created by an Application Owner; no invitation is sent.</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="create()">
-        <label>Email<input type="email" formControlName="email" autocomplete="off"></label>
-        <label>Temporary password<input type="password" formControlName="password" autocomplete="new-password"></label>
-        <fieldset>
-          <legend>Roles</legend>
-          @for (role of roles; track role) {
-            <label class="role-option"><input type="checkbox" [checked]="form.controls.roles.value.includes(role)" (change)="toggleRole(role)">{{ role }}</label>
-          }
-        </fieldset>
-        <button type="submit" [disabled]="saving()">{{ saving() ? 'Creating…' : 'Create staff account' }}</button>
-      </form>
-    </mat-card-content>
-  </mat-card>
+  <div class="staff-summary">
+    <div><span>Total staff</span><strong>{{ staff().length }}</strong></div>
+    <div><span>Active members</span><strong>{{ staff().filter(member => member.status === 'Active').length }}</strong></div>
+    <div><span>Needs attention</span><strong>{{ staff().filter(member => member.status !== 'Active').length }}</strong></div>
+  </div>
 
   @if (success()) { <p class="success" role="status">{{ success() }}</p> }
-  @if (error()) { <mat-card><mat-card-content><p class="error" role="alert">{{ error() }}</p></mat-card-content></mat-card> }
-  @if (loading()) {
-    <div class="loading"><mat-spinner diameter="40" aria-label="Loading staff"></mat-spinner><p>Loading staff records…</p></div>
-  } @else if (staff().length === 0) {
-    <mat-card><mat-card-content><h2>No staff members yet</h2><p>Add the first Operations Staff or Credit Manager account to begin.</p></mat-card-content></mat-card>
-  } @else {
-    <div class="staff-grid">
-      @for (member of staff(); track member.userAccountId) {
-        <mat-card class="staff-card">
-          <mat-card-header><div class="avatar" aria-hidden="true">{{ member.email.charAt(0).toUpperCase() }}</div><div><mat-card-title>{{ member.email }}</mat-card-title><mat-card-subtitle>{{ member.status }}</mat-card-subtitle></div></mat-card-header>
-          <mat-card-content><div class="roles">@for (role of member.roles; track role) { <span>{{ role }}</span> }</div><p class="created">Created {{ member.createdAt | date:'mediumDate' }}</p><div class="staff-actions"><button type="button" class="status-button" (click)="changeStatus(member)">{{ member.status === 'Active' ? 'Suspend access' : 'Restore access' }}</button><button type="button" class="status-button" (click)="resetPassword(member)">Reset password</button><button type="button" class="status-button" (click)="changeRoles(member)">Change roles</button><button type="button" class="danger-button" (click)="remove(member)" [disabled]="member.status === 'Removed'">Remove access</button></div></mat-card-content>
-        </mat-card>
-      }
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+  <mat-tab-group class="staff-tabs" animationDuration="0ms" [selectedIndex]="selectedTab()" (selectedIndexChange)="selectedTab.set($event)">
+    <mat-tab label="Staff directory">
+      <section class="listing-panel" aria-labelledby="staff-list-heading">
+    <div class="listing-header"><div><p class="eyebrow">Directory</p><h2 id="staff-list-heading">Staff members</h2></div><span class="record-count">{{ filteredStaff().length }} records</span></div>
+    <div class="filters" role="search">
+      <label class="search-field">Search staff<input type="search" placeholder="Search email or role" [value]="query()" (input)="setQuery($event)"></label>
+      <label>Status<select [value]="statusFilter()" (change)="setStatusFilter($event)"><option>All statuses</option><option>Active</option><option>Disabled</option><option>Removed</option></select></label>
+      <label>Role<select [value]="roleFilter()" (change)="setRoleFilter($event)"><option>All roles</option><option>OperationsStaff</option><option>CreditManager</option></select></label>
     </div>
-  }
+
+    @if (pagedStaff().length === 0) {
+      <div class="empty-state"><h3>No staff members match these filters.</h3><p>Adjust the search or filters to see more records.</p></div>
+    } @else {
+      <div class="table-wrap"><table><thead><tr><th scope="col">Staff member</th><th scope="col">Roles</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>@for (member of pagedStaff(); track member.userAccountId) {<tr [class.selected-row]="selectedMember()?.userAccountId === member.userAccountId"><th scope="row"><button class="member-link" type="button" (click)="select(member)"><span class="avatar" aria-hidden="true">{{ member.email.charAt(0).toUpperCase() }}</span><span>{{ member.email }}</span></button></th><td><div class="roles">@for (role of member.roles; track role) { <span>{{ role }}</span> }</div></td><td><span class="status-badge" [class.disabled]="member.status !== 'Active'">{{ member.status }}</span></td><td>{{ member.createdAt | date:'mediumDate' }}</td><td><button class="row-action" type="button" (click)="select(member)">View details</button></td></tr>}</tbody></table></div>
+      <div class="pagination"><span>Showing {{ ((page() - 1) * pageSize) + 1 }}–{{ Math.min(page() * pageSize, filteredStaff().length) }} of {{ filteredStaff().length }}</span><div><button type="button" (click)="previousPage()" [disabled]="page() === 1">Previous</button><span>Page {{ page() }} of {{ pageCount() }}</span><button type="button" (click)="nextPage()" [disabled]="page() === pageCount()">Next</button></div></div>
+    }
+      </section>
+    </mat-tab>
+
+    <mat-tab label="Add staff member">
+      <mat-card class="create-card tab-card">
+        <mat-card-header><mat-card-title>Add staff member</mat-card-title><mat-card-subtitle>The Application Owner creates accounts; no invitation is sent.</mat-card-subtitle></mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="form" (ngSubmit)="create()">
+            <label>Email<input type="email" formControlName="email" autocomplete="off"></label>
+            <label>Temporary password<input type="password" formControlName="password" autocomplete="new-password"></label>
+            <fieldset><legend>Roles</legend>@for (role of roles; track role) { <label class="role-option"><input type="checkbox" [checked]="form.controls.roles.value.includes(role)" (change)="toggleRole(role)">{{ role }}</label> }</fieldset>
+            <button type="submit" [disabled]="saving()">{{ saving() ? 'Creating…' : 'Create staff account' }}</button>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+
+    <mat-tab label="Member details">
+      @if (selectedMember(); as member) {
+        <mat-card class="member-detail tab-card"><mat-card-header><div><p class="eyebrow">Selected member</p><mat-card-title>{{ member.email }}</mat-card-title><mat-card-subtitle>Demo account · Created {{ member.createdAt | date:'mediumDate' }}</mat-card-subtitle></div><span class="status-badge" [class.disabled]="member.status !== 'Active'">{{ member.status }}</span></mat-card-header><mat-card-content><div class="detail-grid"><div><span>Assigned roles</span><strong>{{ member.roles.join(' · ') }}</strong></div><div><span>Access history</span><strong>4 recorded actions</strong></div><div><span>Password state</span><strong>Change required on next sign-in</strong></div></div><div class="detail-actions"><button type="button" class="status-button" (click)="changeStatus(member)">{{ member.status === 'Active' ? 'Suspend access' : 'Restore access' }}</button><button type="button" class="status-button" (click)="resetPassword(member)">Reset password</button><button type="button" class="status-button" (click)="changeRoles(member)">Toggle demo roles</button><button type="button" class="danger-button" (click)="remove(member)" [disabled]="member.status === 'Removed'">Remove access</button></div></mat-card-content></mat-card>
+      } @else { <div class="empty-state tab-card"><h3>Select a staff member first.</h3><p>Return to the directory to view member details.</p></div> }
+    </mat-tab>
+  </mat-tab-group>
+
 </section>

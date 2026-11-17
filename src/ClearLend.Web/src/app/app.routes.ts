@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth/auth.guard';
 import { LoginComponent } from './features/login/login.component';
 import { ChangePasswordComponent } from './features/change-password/change-password.component';
 import { BorrowerProfileComponent } from './features/borrower-profile/borrower-profile.component';
@@ -16,14 +15,14 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'welcome' },
   { path: 'welcome', component: WelcomeComponent },
   { path: 'how-it-works', component: HowItWorksComponent },
-  { path: 'borrower', component: BorrowerDashboardComponent, canActivate: [authGuard] },
-  { path: 'lender', component: LenderDashboardComponent, canActivate: [authGuard] },
+  { path: 'borrower', component: BorrowerDashboardComponent },
+  { path: 'lender', component: LenderDashboardComponent },
   { path: 'register', component: BorrowerRegistrationComponent },
   { path: 'lender/register', component: LenderRegistrationComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'change-password', component: ChangePasswordComponent, canActivate: [authGuard] },
-  { path: 'profile', component: BorrowerProfileComponent, canActivate: [authGuard] },
-  { path: 'lender/profile', component: LenderProfileComponent, canActivate: [authGuard] },
-  { path: 'staff', component: StaffDashboardComponent, canActivate: [authGuard] },
+  { path: 'change-password', component: ChangePasswordComponent },
+  { path: 'profile', component: BorrowerProfileComponent },
+  { path: 'lender/profile', component: LenderProfileComponent },
+  { path: 'staff', component: StaffDashboardComponent },
   { path: '**', redirectTo: 'welcome' }
 ];

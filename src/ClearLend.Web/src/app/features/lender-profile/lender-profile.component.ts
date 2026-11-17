@@ -1,35 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Component } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ApiService } from '../../core/api/api.service';
-import { LenderProfile } from '../../core/api/api.models';
+import { MatTabsModule } from '@angular/material/tabs';
 
-@Component({
-  selector: 'app-lender-profile',
-  standalone: true,
-  imports: [DatePipe, MatCardModule, MatProgressSpinnerModule],
-  templateUrl: './lender-profile.component.html',
-  styleUrl: './lender-profile.component.scss'
-})
-export class LenderProfileComponent {
-  private readonly api = inject(ApiService);
-  readonly loading = signal(true);
-  readonly error = signal('');
-  readonly profile = signal<LenderProfile | null>(null);
+interface DemoLenderProfile { legalBusinessName: string; tradingName: string; email: string; contactName: string; accountStatus: string; profileState: string; consentStatus: string; registrationDate: string; registrationNumber: string; sector: string; }
 
-  constructor() {
-    this.api.getMyLenderProfile().subscribe({
-      next: profile => {
-        this.profile.set(profile);
-        this.loading.set(false);
-      },
-      error: (error: HttpErrorResponse) => {
-        const apiMessage = error.error?.message;
-        this.error.set(apiMessage ? `${apiMessage} (HTTP ${error.status})` : `We could not load your lender profile (HTTP ${error.status}).`);
-        this.loading.set(false);
-      }
-    });
-  }
-}
+@Component({ selector: 'app-lender-profile', standalone: true, imports: [DatePipe, MatCardModule, MatTabsModule], templateUrl: './lender-profile.component.html', styleUrl: './lender-profile.component.scss' })
+export class LenderProfileComponent { readonly profile: DemoLenderProfile = { legalBusinessName: 'ClearLend Demo Lending', tradingName: 'ClearLend Capital', email: 'lender@clearlend.local', contactName: 'Demo Lender', accountStatus: 'Active', profileState: 'Profile complete', consentStatus: 'Granted', registrationDate: '2026-11-14', registrationNumber: 'DEMO-001', sector: 'Business finance' }; }

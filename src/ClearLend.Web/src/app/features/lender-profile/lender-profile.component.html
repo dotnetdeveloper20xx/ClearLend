@@ -1,28 +1,20 @@
 <section class="profile-layout">
-  <p class="eyebrow">My lender profile</p>
-  <h1>Your ClearLend profile</h1>
-  <p class="lead">Review the business information connected to your lender account.</p>
-
-  @if (loading()) {
-    <div class="loading-state"><mat-spinner diameter="40" aria-label="Loading lender profile"></mat-spinner><p>Loading your profile…</p></div>
-  } @else if (error()) {
-    <mat-card><mat-card-content><p class="error" role="alert">{{ error() }}</p></mat-card-content></mat-card>
-  } @else if (profile(); as lender) {
-    <mat-card class="profile-card">
-      <mat-card-header>
-        <div class="profile-badge" aria-hidden="true">{{ lender.legalBusinessName.charAt(0) }}</div>
-        <div><mat-card-title>{{ lender.legalBusinessName }}</mat-card-title><mat-card-subtitle>{{ lender.email }}</mat-card-subtitle></div>
-      </mat-card-header>
-      <mat-card-content>
-        <dl>
-          <dt>Trading name</dt><dd>{{ lender.tradingName || 'Not provided' }}</dd>
-          <dt>Primary contact</dt><dd>{{ lender.contactGivenName }} {{ lender.contactFamilyName }}</dd>
-          <dt>Account status</dt><dd>{{ lender.accountStatus }}</dd>
-          <dt>Lender profile status</dt><dd>{{ lender.profileState }}</dd>
-          <dt>Terms consent</dt><dd>{{ lender.consentStatus }}</dd>
-          <dt>Registered</dt><dd>{{ lender.registrationDate | date:'mediumDate' }}</dd>
-        </dl>
-      </mat-card-content>
-    </mat-card>
-  }
+  <div class="demo-banner">Demo profile · Illustrative lender data for owner review</div>
+  <p class="eyebrow">My business profile</p><h1>Your ClearLend profile</h1><p class="lead">Review the business information connected to your lender account.</p>
+  <mat-tab-group class="profile-tabs" animationDuration="0ms">
+    <mat-tab label="Overview">
+      <div class="tab-content">
+        <div class="profile-grid"><mat-card class="profile-card primary-card"><mat-card-header><div class="profile-badge" aria-hidden="true">C</div><div><mat-card-title>{{ profile.legalBusinessName }}</mat-card-title><mat-card-subtitle>{{ profile.email }}</mat-card-subtitle></div></mat-card-header><mat-card-content><span class="status success">{{ profile.profileState }}</span><p class="card-copy">Your business profile is ready to support opportunity review and future lending activity.</p><button class="outline-button" type="button">Edit business details <span>→</span></button></mat-card-content></mat-card><mat-card class="readiness-card"><mat-card-content><p class="eyebrow">Lender readiness</p><strong>100%</strong><div class="progress-track complete"><span></span></div><p>Core business information is complete.</p></mat-card-content></mat-card></div>
+      </div>
+    </mat-tab>
+    <mat-tab label="Business details">
+      <div class="tab-content">
+        <div class="section-heading"><p class="eyebrow">Business information</p><h2>Details connected to your account.</h2></div>
+        <mat-card class="details-card"><mat-card-content><dl><dt>Trading name</dt><dd>{{ profile.tradingName }}</dd><dt>Primary contact</dt><dd>{{ profile.contactName }}</dd><dt>Business registration</dt><dd>{{ profile.registrationNumber }}</dd><dt>Sector</dt><dd>{{ profile.sector }}</dd><dt>Account status</dt><dd><span class="status success">{{ profile.accountStatus }}</span></dd><dt>Registered</dt><dd>{{ profile.registrationDate | date:'mediumDate' }}</dd></dl></mat-card-content></mat-card>
+      </div>
+    </mat-tab>
+    <mat-tab label="Lending readiness">
+      <div class="tab-content next-steps"><p class="eyebrow">Next steps</p><h2>Prepare for future lending opportunities.</h2><div class="step-item"><span>1</span><div><strong>Review business details</strong><p>Confirm that your trading name, registration, sector, and contact information remain current.</p></div></div><div class="step-item"><span>2</span><div><strong>Explore lending products</strong><p>Product discovery and opportunity matching are planned for a future ClearLend release.</p></div></div></div>
+    </mat-tab>
+  </mat-tab-group>
 </section>

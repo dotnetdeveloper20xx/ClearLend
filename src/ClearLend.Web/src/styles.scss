@@ -1,1 +1,44 @@
-@use '@angular/material' as mat; html{@include mat.theme((color:mat.$azure-palette,typography:Roboto,density:0))}body{margin:0;color:#20313c;background:#f5f8fa;font-family:Roboto,Arial,sans-serif}*{box-sizing:border-box}
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((color: mat.$azure-palette, typography: Roboto, density: 0));
+  font-size: 16px;
+}
+
+:root {
+  --cl-navy-950: #092538;
+  --cl-navy-900: #10364c;
+  --cl-navy-700: #255873;
+  --cl-teal-700: #087f78;
+  --cl-teal-100: #dff3f0;
+  --cl-gold-600: #b66e1f;
+  --cl-gold-100: #fff1d9;
+  --cl-ink: #183342;
+  --cl-muted: #607987;
+  --cl-surface: #ffffff;
+  --cl-canvas: #f3f7f8;
+  --cl-border: #d9e4e7;
+  --cl-danger: #b42318;
+  --cl-success: #087f56;
+  --cl-radius-lg: 1.25rem;
+  --cl-radius-md: .75rem;
+  --cl-shadow-sm: 0 4px 18px rgba(9, 37, 56, .08);
+  --cl-shadow-md: 0 16px 40px rgba(9, 37, 56, .12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--cl-ink);
+  background: var(--cl-canvas);
+  font-family: Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--cl-teal-700); }
+
+:focus-visible {
+  outline: 3px solid #f4bd55;
+  outline-offset: 3px;
+}

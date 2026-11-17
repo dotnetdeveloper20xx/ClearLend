@@ -1,1 +1,10 @@
-.auth-layout{display:grid;place-items:center;min-height:70vh}mat-card{width:min(100%,620px);padding:1rem}form{display:grid;gap:1rem;margin-top:1.5rem}.two-columns{display:grid;gap:1rem;grid-template-columns:1fr 1fr}.error{color:#b3261e}.success{color:#146c43}@media(max-width:600px){.two-columns{grid-template-columns:1fr}}
+.auth-layout { display: grid; min-height: 70vh; place-items: center; padding: 2.5rem 1rem; }
+mat-card { width: min(100%, 620px); padding: 1.25rem; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg); box-shadow: var(--cl-shadow-md); }
+form { display: grid; gap: 1rem; margin-top: 1.5rem; }
+.two-columns { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+.error, .success { padding: .8rem 1rem; border-left: 4px solid; }
+.error { border-color: var(--cl-danger); background: #fff0ef; color: var(--cl-danger); }
+.success { border-color: var(--cl-success); background: #e8f7f0; color: var(--cl-success); }
+button { min-height: 3rem; border-radius: 999px; }
+mat-card-actions a { color: var(--cl-gold-600); font-weight: 700; text-decoration: none; }
+@media (max-width: 600px) { .two-columns { grid-template-columns: 1fr; } }

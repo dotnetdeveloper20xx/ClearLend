@@ -1,1 +1,87 @@
-<mat-toolbar class="topbar"><a class="brand" routerLink="/welcome"><span class="brand-mark">C</span>ClearLend</a><nav class="main-nav" aria-label="Main navigation"><a class="nav-link" routerLink="/welcome">Home</a><a class="nav-link" routerLink="/how-it-works">How it works</a>@if(!auth.isAuthenticated()){<a class="nav-link" routerLink="/login">Sign in</a>}@else if(auth.accountType()==='Borrower'){<a class="nav-link" routerLink="/profile">My profile</a>}@else if(auth.accountType()==='Lender'){<a class="nav-link" routerLink="/lender/profile">My business</a>}@else if(auth.accountType()==='Staff'){<a class="nav-link" routerLink="/staff">Staff area</a>}</nav><span class="toolbar-spacer"></span>@if(auth.isAuthenticated()){<span class="account-label">{{auth.accountType()}}</span><button mat-button type="button" (click)="auth.logout()">Sign out</button>}</mat-toolbar><main class="page-shell"><router-outlet /></main><footer>ClearLend <span>·</span> Clear choices. Confident futures.</footer>
+<mat-toolbar class="topbar">
+  <a class="brand" routerLink="/welcome" aria-label="ClearLend home">
+    <span class="brand-mark" aria-hidden="true">C</span>
+    <span>ClearLend</span>
+  </a>
+
+  <nav class="main-nav" aria-label="Main navigation">
+    <a class="nav-link" routerLink="/welcome">Home</a>
+    <a class="nav-link" routerLink="/how-it-works">How it works</a>
+    @if (!auth.isAuthenticated()) {
+      <a class="nav-link" routerLink="/login">Sign in</a>
+    } @else if (auth.accountType() === 'Borrower') {
+      <a class="nav-link" routerLink="/borrower">Dashboard</a>
+      <a class="nav-link" routerLink="/profile">My profile</a>
+    } @else if (auth.accountType() === 'Lender') {
+      <a class="nav-link" routerLink="/lender">Dashboard</a>
+      <a class="nav-link" routerLink="/lender/profile">My business</a>
+    } @else if (auth.accountType() === 'Staff') {
+      <a class="nav-link" routerLink="/staff">Staff area</a>
+    }
+  </nav>
+
+  <span class="toolbar-spacer"></span>
+
+  <button class="menu-toggle" mat-button type="button" (click)="toggleDemoMenu()" [attr.aria-expanded]="demoMenuOpen()" aria-controls="demo-navigation">
+    {{ demoMenuOpen() ? 'Hide demo menu' : 'Show demo menu' }}
+  </button>
+
+  @if (auth.isAuthenticated()) {
+    <span class="account-label">{{ auth.accountType() }}</span>
+    <button mat-button type="button" (click)="auth.logout()">Sign out</button>
+  }
+</mat-toolbar>
+
+<div class="app-frame">
+  @if (demoMenuOpen()) {
+    <aside id="demo-navigation" class="demo-navigation" aria-label="Owner demo navigation">
+      <div class="demo-navigation-header">
+        <p class="menu-kicker">Owner demo</p>
+        <h2>Explore ClearLend</h2>
+        <p>Use this menu to preview every currently implemented page.</p>
+      </div>
+
+      <nav class="demo-nav-groups">
+        <section>
+          <h3>Public pages</h3>
+          <a routerLink="/welcome">Welcome</a>
+          <a routerLink="/how-it-works">How it works</a>
+          <a routerLink="/login">Sign in</a>
+          <a routerLink="/register">Borrower registration</a>
+          <a routerLink="/lender/register">Lender registration</a>
+        </section>
+        <section>
+          <h3>Borrower</h3>
+          <a routerLink="/borrower">Borrower dashboard</a>
+          <a routerLink="/profile">Borrower profile</a>
+          <a routerLink="/change-password">Change password</a>
+        </section>
+        <section>
+          <h3>Lender</h3>
+          <a routerLink="/lender">Lender dashboard</a>
+          <a routerLink="/lender/profile">Lender business profile</a>
+        </section>
+        <section>
+          <h3>Staff</h3>
+          <a routerLink="/staff">Staff management</a>
+        </section>
+        <section class="planned-pages">
+          <h3>Planned previews</h3>
+          <span>Product catalogue</span>
+          <span>Application review</span>
+          <span>Credit review</span>
+          <span>Audit activity</span>
+          <small>These are documented but not implemented yet.</small>
+        </section>
+      </nav>
+    </aside>
+  }
+
+  <main class="page-shell">
+    <router-outlet />
+  </main>
+</div>
+
+<footer>
+  ClearLend <span aria-hidden="true">·</span> Clear choices. Confident futures.
+</footer>
