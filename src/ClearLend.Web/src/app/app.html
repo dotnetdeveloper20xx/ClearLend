@@ -5,18 +5,18 @@
   </a>
 
   <nav class="main-nav" aria-label="Main navigation">
-    <a class="nav-link" routerLink="/welcome">Home</a>
-    <a class="nav-link" routerLink="/how-it-works">How it works</a>
+    <a class="nav-link" routerLink="/welcome" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <a class="nav-link" routerLink="/how-it-works" routerLinkActive="active">How it works</a>
     @if (!auth.isAuthenticated()) {
-      <a class="nav-link" routerLink="/login">Sign in</a>
+      <a class="nav-link" routerLink="/login" routerLinkActive="active">Sign in</a>
     } @else if (auth.accountType() === 'Borrower') {
-      <a class="nav-link" routerLink="/borrower">Dashboard</a>
-      <a class="nav-link" routerLink="/profile">My profile</a>
+      <a class="nav-link" routerLink="/borrower" routerLinkActive="active">Dashboard</a>
+      <a class="nav-link" routerLink="/profile" routerLinkActive="active">My profile</a>
     } @else if (auth.accountType() === 'Lender') {
-      <a class="nav-link" routerLink="/lender">Dashboard</a>
-      <a class="nav-link" routerLink="/lender/profile">My business</a>
+      <a class="nav-link" routerLink="/lender" routerLinkActive="active">Dashboard</a>
+      <a class="nav-link" routerLink="/lender/profile" routerLinkActive="active">My business</a>
     } @else if (auth.accountType() === 'Staff') {
-      <a class="nav-link" routerLink="/staff">Staff area</a>
+      <a class="nav-link" routerLink="/staff" routerLinkActive="active">Staff area</a>
     }
   </nav>
 
@@ -44,26 +44,26 @@
       <nav class="demo-nav-groups">
         <section>
           <h3>Public pages</h3>
-          <a routerLink="/welcome">Welcome</a>
-          <a routerLink="/how-it-works">How it works</a>
-          <a routerLink="/login">Sign in</a>
-          <a routerLink="/register">Borrower registration</a>
-          <a routerLink="/lender/register">Lender registration</a>
+          <a routerLink="/welcome" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Welcome</a>
+          <a routerLink="/how-it-works" routerLinkActive="active">How it works</a>
+          <a routerLink="/login" routerLinkActive="active">Sign in</a>
+          <a routerLink="/register" routerLinkActive="active">Borrower registration</a>
+          <a routerLink="/lender/register" routerLinkActive="active">Lender registration</a>
         </section>
         <section>
           <h3>Borrower</h3>
-          <a routerLink="/borrower">Borrower dashboard</a>
-          <a routerLink="/profile">Borrower profile</a>
-          <a routerLink="/change-password">Change password</a>
+          <a routerLink="/borrower" routerLinkActive="active">Borrower dashboard</a>
+          <a routerLink="/profile" routerLinkActive="active">Borrower profile</a>
+          <a routerLink="/change-password" routerLinkActive="active">Change password</a>
         </section>
         <section>
           <h3>Lender</h3>
-          <a routerLink="/lender">Lender dashboard</a>
-          <a routerLink="/lender/profile">Lender business profile</a>
+          <a routerLink="/lender" routerLinkActive="active">Lender dashboard</a>
+          <a routerLink="/lender/profile" routerLinkActive="active">Lender business profile</a>
         </section>
         <section>
           <h3>Staff</h3>
-          <a routerLink="/staff">Staff management</a>
+          <a routerLink="/staff" routerLinkActive="active">Staff management</a>
         </section>
         <section class="planned-pages">
           <h3>Planned previews</h3>

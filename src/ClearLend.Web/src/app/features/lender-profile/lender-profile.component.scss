@@ -21,6 +21,7 @@
 .status.success { background: var(--cl-teal-100); color: var(--cl-teal-700); }
 .outline-button { margin-top: 1rem; padding: .7rem 1rem; border: 1px solid var(--cl-teal-700); border-radius: 999px; background: transparent; color: var(--cl-teal-700); font: inherit; font-weight: 700; cursor: pointer; }
 .outline-button span { margin-left: 1rem; }
+.outline-button:disabled { border-color: var(--cl-border); color: var(--cl-muted); cursor: not-allowed; opacity: .8; }
 .section-heading { margin: 5rem 0 1.25rem; }
 .section-heading h2 { margin: .4rem 0; color: var(--cl-ink); font: 400 clamp(1.8rem, 4vw, 2.7rem) Georgia, serif; }
 .details-card { padding: 1rem; }

@@ -38,6 +38,15 @@ body {
 
 a { color: var(--cl-teal-700); }
 
+.mat-mdc-button, .mat-mdc-unelevated-button, .mat-mdc-raised-button, .mat-mdc-outlined-button {
+  --mdc-text-button-label-text-color: var(--cl-teal-700);
+  --mdc-filled-button-container-color: var(--cl-teal-700);
+  --mdc-filled-button-label-text-color: #fff;
+  --mdc-outlined-button-label-text-color: var(--cl-teal-700);
+  --mdc-outlined-button-outline-color: var(--cl-teal-700);
+  font-weight: 700;
+}
+
 :focus-visible {
   outline: 3px solid #f4bd55;
   outline-offset: 3px;
