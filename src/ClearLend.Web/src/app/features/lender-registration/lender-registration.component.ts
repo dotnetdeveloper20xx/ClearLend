@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
 import { ApiService } from '../../core/api/api.service';
 
-@Component({ selector: 'app-lender-registration', standalone: true, imports: [ReactiveFormsModule, RouterLink], styleUrl: './lender-registration.component.scss', templateUrl: './lender-registration.component.html' })
+@Component({ selector: 'app-lender-registration', standalone: true, imports: [ReactiveFormsModule, RouterLink, MatCardModule], styleUrl: './lender-registration.component.scss', templateUrl: './lender-registration.component.html' })
 export class LenderRegistrationComponent {
   private readonly fb = inject(FormBuilder); private readonly api = inject(ApiService);
   readonly message = signal('');

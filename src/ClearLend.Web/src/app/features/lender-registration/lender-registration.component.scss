@@ -1,13 +1,19 @@
-.lender-page { display: grid; max-width: 1180px; margin: auto; padding: 4rem 1rem; grid-template-columns: .8fr 1.2fr; gap: 5rem; align-items: start; }
-.lender-intro { padding-top: 2rem; }
-.eyebrow { color: var(--cl-gold-600); font-size: .72rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
-.lender-intro h1 { margin: 1rem 0; color: var(--cl-ink); font: 400 clamp(3rem, 5vw, 5rem)/1 Georgia, serif; }
-.lender-intro p:not(.eyebrow) { color: var(--cl-muted); font-size: 1.1rem; line-height: 1.7; }
-.lender-intro a, .signin a { color: var(--cl-gold-600); font-weight: 700; text-decoration: none; }
-.form-card { padding: 2.5rem; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg); background: var(--cl-surface); box-shadow: var(--cl-shadow-md); }
-.form-card h2 { margin: 0; color: var(--cl-ink); font: 400 2rem Georgia, serif; }
-.muted, .signin { color: var(--cl-muted); }
-.form-card form { display: grid; gap: 1.15rem; margin-top: 2rem; }
+.lender-page { display: grid; grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr); gap: clamp(2rem, 7vw, 6rem); max-width: 1180px; min-height: 78vh; margin: auto; padding: clamp(3rem, 8vw, 7rem) 1rem; align-items: center; }
+.lender-intro { max-width: 580px; }
+.eyebrow, .section-label { color: var(--cl-gold-600); font-size: .72rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.lender-intro h1 { margin: 1rem 0 1.5rem; color: var(--cl-ink); font: 400 clamp(2.8rem, 6vw, 5.5rem)/.98 Georgia, serif; letter-spacing: -.03em; }
+.lead { color: var(--cl-muted); font-size: 1.15rem; line-height: 1.7; }
+.lender-intro > a, .signin a { color: var(--cl-teal-700); font-weight: 800; text-decoration: none; }
+.journey-note { display: grid; grid-template-columns: 2.2rem 1fr; gap: .8rem; margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid var(--cl-border); }
+.journey-note > span { color: var(--cl-teal-700); font-weight: 800; }
+.journey-note strong { color: var(--cl-ink); }
+.journey-note p { margin: .25rem 0 0; color: var(--cl-muted); line-height: 1.5; }
+.form-card { padding: 1.25rem; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg); background: var(--cl-surface); box-shadow: var(--cl-shadow-md); }
+.form-card h2, .form-card mat-card-title { color: var(--cl-ink); font: 400 2rem Georgia, serif; }
+.form-card mat-card-subtitle { margin-top: .5rem; color: var(--cl-muted); }
+.form-card form { display: grid; gap: 1rem; margin-top: 1.75rem; }
+.form-section { padding: 1rem; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-md); background: #fbfdfd; }
+.section-label { margin: 0 0 1rem; color: var(--cl-teal-700); }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 label { display: grid; gap: .45rem; color: var(--cl-ink); font-weight: 700; }
 label span { color: var(--cl-muted); font-size: .78rem; font-weight: 400; }
@@ -15,9 +21,11 @@ input:not([type=checkbox]) { width: 100%; padding: .9rem 1rem; border: 1px solid
 input:focus { border-color: var(--cl-teal-700); outline: 3px solid var(--cl-teal-100); }
 .consent { display: flex; align-items: center; font-weight: 400; }
 .consent input { width: 18px; height: 18px; margin-right: .6rem; accent-color: var(--cl-teal-700); }
-.form-card button { border: 0; border-radius: 999px; background: var(--cl-gold-600); color: white; padding: 1rem; font: 700 1rem inherit; cursor: pointer; }
-.form-card button:hover { background: #965717; }
+.message { padding: .8rem 1rem; border-left: 4px solid var(--cl-danger); background: #fff0ef; color: var(--cl-danger); line-height: 1.5; }
+.form-card button { border: 0; border-radius: 999px; background: var(--cl-teal-700); color: white; padding: 1rem; font: 700 1rem inherit; cursor: pointer; }
+.form-card button:hover { background: #06645f; }
 .form-card button b { float: right; }
-.message { padding: .8rem 1rem; border-left: 4px solid var(--cl-danger); background: #fff0ef; color: var(--cl-danger); }
-.signin { text-align: center; }
-@media (max-width: 800px) { .lender-page { grid-template-columns: 1fr; gap: 2rem; padding-top: 2rem; } .two-col { grid-template-columns: 1fr; } }
+mat-card-actions { display: flex; justify-content: center; gap: .35rem; padding-top: 1rem; color: var(--cl-muted); }
+mat-card-actions a { color: var(--cl-teal-700); font-weight: 800; text-decoration: none; }
+@media (max-width: 850px) { .lender-page { grid-template-columns: 1fr; max-width: 700px; } }
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } mat-card-actions { flex-wrap: wrap; } }

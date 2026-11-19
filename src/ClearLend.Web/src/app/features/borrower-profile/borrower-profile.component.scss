@@ -3,6 +3,12 @@
 .eyebrow { color: var(--cl-gold-600); font-size: .72rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 .profile-layout h1 { margin: 1rem 0; color: var(--cl-ink); font: 400 clamp(2.8rem, 6vw, 5rem)/1 Georgia, serif; }
 .lead { max-width: 680px; color: var(--cl-muted); font-size: 1.15rem; line-height: 1.7; }
+.profile-summary { display: flex; align-items: center; gap: .9rem; margin-top: 2rem; padding: .8rem 1rem; border: 1px solid var(--cl-border); border-radius: 999px; background: white; box-shadow: var(--cl-shadow-sm); }
+.profile-summary .profile-badge { width: 2.6rem; height: 2.6rem; flex: 0 0 2.6rem; }
+.profile-summary div { flex: 1; }
+.profile-summary strong, .profile-summary div span { display: block; }
+.profile-summary strong { color: var(--cl-ink); }
+.profile-summary div span { margin-top: .15rem; color: var(--cl-muted); font-size: .82rem; }
 .profile-grid { display: grid; grid-template-columns: 1.5fr .8fr; gap: 1rem; margin-top: 2.5rem; }
 .profile-card, .readiness-card, .details-card { border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg); box-shadow: var(--cl-shadow-sm); }
 .profile-card { padding: 1rem; }
@@ -30,10 +36,11 @@ dl { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: 1rem; pa
 dt { color: var(--cl-ink); font-weight: 700; }
 dd { margin: 0; color: var(--cl-muted); }
 .profile-tabs { display: block; margin-top: 2rem; }
+.profile-tabs :global(.mat-mdc-tab-labels) { border-bottom: 1px solid var(--cl-border); }
 .tab-content { padding-top: 1.5rem; }
 .next-steps h2 { margin: .5rem 0 2rem; color: var(--cl-ink); font: 400 clamp(1.8rem, 4vw, 2.7rem) Georgia, serif; }
 .step-item { display: flex; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--cl-border); }
 .step-item > span { display: grid; width: 2rem; height: 2rem; flex: 0 0 2rem; place-items: center; border-radius: 50%; background: var(--cl-teal-100); color: var(--cl-teal-700); font-weight: 800; }
 .step-item strong { color: var(--cl-ink); }
 .step-item p { margin: .35rem 0 0; color: var(--cl-muted); line-height: 1.5; }
-@media (max-width: 700px) { .profile-grid { grid-template-columns: 1fr; } dl { grid-template-columns: 1fr; gap: .25rem 1rem; } dd { margin-bottom: .75rem; } }
+@media (max-width: 700px) { .profile-grid { grid-template-columns: 1fr; } .profile-summary { border-radius: 1rem; flex-wrap: wrap; } .profile-summary .status { margin-left: 3.5rem; } dl { grid-template-columns: 1fr; gap: .25rem 1rem; } dd { margin-bottom: .75rem; } }
